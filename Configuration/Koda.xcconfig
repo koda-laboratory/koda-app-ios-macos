@@ -32,8 +32,7 @@ MACOSX_DEPLOYMENT_TARGET = 26.5
 SWIFT_VERSION = 6
 
 // Supabase (single project `koda`). $() prevents xcconfig from reading // as a comment.
-// TODO: replace <project-ref> with the real project ref once the Supabase project exists (PLAN section 14).
-SUPABASE_URL = https:/$()/<project-ref>.supabase.co
+SUPABASE_URL = https:/$()/vccllqqmrebbdfpekoud.supabase.co
 // Overridden in Koda.private.xcconfig with the sb_publishable_… key. Never use secret keys in the app.
 SUPABASE_PUBLISHABLE_KEY =
 HTTP_LOGGING_ENABLED = NO

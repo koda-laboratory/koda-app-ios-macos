@@ -10,7 +10,7 @@ App nativa de Koda, la app privada de casa. Su primer módulo, **Comidita**, cub
 - `Configuration/`: `Koda.xcconfig` (valores públicos: URL de Supabase, ids, firma), `version.xcconfig` (única fuente de versión), `Info.plist` y los entitlements por SDK (`Koda-iOS`, `Koda-macOS`, `KodaWidgets`).
 - Secretos fuera de Git: la publishable key de Supabase va en `Configuration/Koda.private.xcconfig` (plantilla `Koda.private.xcconfig.example`) y los de fastlane en `fastlane/.env` (plantilla `fastlane/.env.example`).
 
-> **Pendiente**: sustituir `<project-ref>` en `SUPABASE_URL` (`Configuration/Koda.xcconfig`) cuando exista el proyecto de Supabase.
+El proyecto de Supabase es `vccllqqmrebbdfpekoud` (`SUPABASE_URL` en `Configuration/Koda.xcconfig`).
 
 ## Puesta en marcha
 

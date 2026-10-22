@@ -246,6 +246,8 @@ platform :ios do
       scheme: SCHEME,
       configuration: "Release",
       destination: "generic/platform=iOS",
+      # The target is multiplatform: without an explicit SDK gym treats it as a Mac app and skips the .ipa.
+      sdk: "iphoneos",
       export_method: "app-store",
       export_options: { provisioningProfiles: provisioning_profiles("AppStore", :ios) },
       xcargs: "-skipPackagePluginValidation -skipMacroValidation",
@@ -333,6 +335,8 @@ platform :mac do
       scheme: SCHEME,
       configuration: "Release",
       destination: "generic/platform=macOS",
+      # Multiplatform target: the SDK tells gym to package a Mac .pkg instead of an .ipa.
+      sdk: "macosx",
       export_method: "app-store",
       export_options: { provisioningProfiles: provisioning_profiles("AppStore", :mac) },
       xcargs: "-skipPackagePluginValidation -skipMacroValidation",
