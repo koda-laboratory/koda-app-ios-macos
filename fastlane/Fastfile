@@ -1,0 +1,367 @@
+# Fastlane configuration for Koda (iPhone + Mac, one multiplatform target).
+# Documentation: https://docs.fastlane.tools
+#
+# Distribution is TestFlight only (internal group "House"). There is no App Store release lane, Deliverfile,
+# store metadata or Slack. App IDs, the App Group and the App Store Connect record already exist: these
+# lanes only fetch or create certificates and provisioning profiles through match.
+
+require "dotenv"
+require "fileutils"
+
+REPO_ROOT = File.expand_path("..", __dir__)
+XCODE_PROJECT_PATH = File.join(REPO_ROOT, "Koda.xcodeproj")
+VERSION_FILE = File.join(REPO_ROOT, "Configuration", "version.xcconfig")
+DERIVED_DATA_PATH = File.join(REPO_ROOT, ".build", "DerivedData")
+OUTPUT_DIRECTORY = File.join(REPO_ROOT, ".build", "fastlane")
+SCHEME = "Koda"
+APP_IDENTIFIER = "com.kodalabs.app"
+WIDGETS_IDENTIFIER = "#{APP_IDENTIFIER}.widgets"
+APP_IDENTIFIERS = [APP_IDENTIFIER, WIDGETS_IDENTIFIER].freeze
+TEAM_ID = "MUDCX7X324"
+TESTFLIGHT_INTERNAL_GROUP_NAME = "House"
+CI_KEYCHAIN_NAME = "koda-ci.keychain"
+TEST_DEVICE = "iPhone 17"
+
+Dotenv.load(File.join(__dir__, ".env"))
+
+default_platform(:ios)
+
+# fastlane/README.md is written by hand; do not regenerate it.
+skip_docs
+
+# MARK: - Helpers
+
+def required_environment_variable(name)
+  value = ENV[name].to_s.strip
+  UI.user_error!("Missing required environment variable #{name} (see fastlane/.env.example)") if value.empty?
+  value
+end
+
+def ci_run?
+  is_ci
+end
+
+# Reads MARKETING_VERSION or CURRENT_PROJECT_VERSION from Configuration/version.xcconfig.
+def version_value(key)
+  line = File.foreach(VERSION_FILE).find do |candidate|
+    candidate.match?(/\A\s*#{Regexp.escape(key)}\s*=/)
+  end
+  UI.user_error!("Missing #{key} in Configuration/version.xcconfig") unless line
+  line.split("=", 2).last.strip
+end
+
+def version_label
+  "#{version_value("MARKETING_VERSION")} (#{version_value("CURRENT_PROJECT_VERSION")})"
+end
+
+def fastlane_boolean_option(value, name:, default:)
+  return default if value.nil?
+  return value if value == true || value == false
+
+  normalized_value = value.to_s.strip.downcase
+  return true if %w[true yes 1].include?(normalized_value)
+  return false if %w[false no 0].include?(normalized_value)
+
+  UI.user_error!("#{name} must be true or false")
+end
+
+def changelog_message
+  message = ENV["CHANGELOG_MESSAGE"].to_s.strip
+  message.empty? ? "Fixes and improvements." : message
+end
+
+# Match platform name and profile name suffix for each fastlane platform.
+def match_platform(platform)
+  platform == :mac ? "macos" : "ios"
+end
+
+def profile_name(kind, identifier, platform)
+  suffix = platform == :mac ? " macos" : ""
+  "match #{kind} #{identifier}#{suffix}"
+end
+
+def provisioning_profiles(kind, platform)
+  APP_IDENTIFIERS.to_h { |identifier| [identifier, profile_name(kind, identifier, platform)] }
+end
+
+# MARK: - Shared private lanes
+
+# App Store Connect API key (App Manager). The .p8 content is stored base64-encoded.
+private_lane :app_store_connect_key do
+  app_store_connect_api_key(
+    key_id: required_environment_variable("APP_STORE_CONNECT_API_KEY_ID"),
+    issuer_id: required_environment_variable("APP_STORE_CONNECT_API_KEY_ISSUER_ID"),
+    key_content: required_environment_variable("APP_STORE_CONNECT_API_KEY_CONTENT"),
+    is_key_content_base64: true,
+    duration: 1200,
+    in_house: false
+  )
+end
+
+# Creates (once per job) the temporary CI keychain that match installs the certificates into.
+private_lane :prepare_ci_keychain do
+  next {} unless ci_run?
+
+  password = required_environment_variable("MATCH_KEYCHAIN_PASSWORD")
+  keychain_path = File.expand_path("~/Library/Keychains/#{CI_KEYCHAIN_NAME}-db")
+  unless File.exist?(keychain_path)
+    create_keychain(
+      name: CI_KEYCHAIN_NAME,
+      password: password,
+      default_keychain: true,
+      unlock: true,
+      timeout: 3600,
+      lock_when_sleeps: false
+    )
+  end
+  { keychain_name: CI_KEYCHAIN_NAME, keychain_password: password }
+end
+
+private_lane :koda_match do |options|
+  platform = options.fetch(:platform)
+  type = options.fetch(:type)
+  match_options = {
+    type: type,
+    platform: match_platform(platform),
+    app_identifier: APP_IDENTIFIERS,
+    team_id: TEAM_ID,
+    readonly: options.fetch(:readonly),
+    api_key: app_store_connect_key
+  }
+  match_options[:force_for_new_devices] = true if type == "development"
+  # The Mac App Store upload is a .pkg signed with the Mac Installer Distribution certificate.
+  match_options[:additional_cert_types] = ["mac_installer_distribution"] if platform == :mac && type == "appstore"
+  match_options.merge!(prepare_ci_keychain)
+  match(**match_options)
+end
+
+private_lane :bump_build_version do
+  sh(File.join(REPO_ROOT, "scripts", "bump_build_version.sh"))
+end
+
+private_lane :latest_commit_changelog do
+  commit_message = last_git_commit[:message].to_s.strip
+  ENV["CHANGELOG_MESSAGE"] = commit_message unless commit_message.empty? || ENV["CHANGELOG_MESSAGE"].to_s.strip != ""
+  UI.message("Changelog: #{changelog_message}")
+end
+
+# Commits Configuration/version.xcconfig and pushes it when FASTLANE_COMMIT_AND_PUSH=true.
+private_lane :commit_version do
+  if ENV["FASTLANE_COMMIT_AND_PUSH"].to_s.casecmp("true").zero?
+    git_commit(
+      path: [VERSION_FILE],
+      message: "chore: bump build to #{version_value("CURRENT_PROJECT_VERSION")} [skip ci]"
+    )
+    push_to_git_remote(remote: "origin", local_branch: "HEAD", remote_branch: git_branch, tags: false)
+  else
+    UI.message("FASTLANE_COMMIT_AND_PUSH is not true; skipping commit and push of #{version_label}")
+  end
+end
+
+# Uploads the artifact of the current lane and makes it available to the internal group "House".
+private_lane :distribute_testflight do |options|
+  api_key = app_store_connect_key
+  app = Spaceship::ConnectAPI::App.find(APP_IDENTIFIER)
+  UI.user_error!("Could not find the App Store Connect app #{APP_IDENTIFIER}") unless app
+
+  internal_group = app.get_beta_groups.find { |group| group.name == TESTFLIGHT_INTERNAL_GROUP_NAME }
+  UI.user_error!("TestFlight group '#{TESTFLIGHT_INTERNAL_GROUP_NAME}' was not found") unless internal_group
+  unless internal_group.is_internal_group
+    UI.user_error!("TestFlight group '#{TESTFLIGHT_INTERNAL_GROUP_NAME}' is not an internal group")
+  end
+
+  pilot_options = {
+    api_key: api_key,
+    app_identifier: APP_IDENTIFIER,
+    app_platform: options.fetch(:app_platform),
+    skip_waiting_for_build_processing: false,
+    skip_submission: false,
+    submit_beta_review: false,
+    distribute_external: false,
+    notify_external_testers: false,
+    changelog: changelog_message
+  }
+  if internal_group.has_access_to_all_builds
+    UI.message("'#{TESTFLIGHT_INTERNAL_GROUP_NAME}' receives every build automatically")
+  else
+    pilot_options[:groups] = [TESTFLIGHT_INTERNAL_GROUP_NAME]
+  end
+  pilot_options.merge!(options.fetch(:artifact))
+  pilot(pilot_options)
+end
+
+# MARK: - iOS
+
+platform :ios do
+  desc "Run KodaTests on the #{TEST_DEVICE} simulator"
+  lane :test do
+    run_tests(
+      project: XCODE_PROJECT_PATH,
+      scheme: SCHEME,
+      devices: [TEST_DEVICE],
+      derived_data_path: DERIVED_DATA_PATH,
+      output_directory: File.join(OUTPUT_DIRECTORY, "tests-ios"),
+      xcargs: "-skipPackagePluginValidation -skipMacroValidation"
+    )
+  end
+
+  desc "Install the iOS development certificates and profiles (read-only in CI)"
+  lane :fetch_certificates_development do
+    koda_match(platform: :ios, type: "development", readonly: ci_run?)
+  end
+
+  desc "Install the iOS App Store certificates and profiles (read-only in CI)"
+  lane :fetch_certificates_appstore do
+    koda_match(platform: :ios, type: "appstore", readonly: ci_run?)
+  end
+
+  desc "Create or renew the iOS development certificates and profiles in the match repository"
+  lane :update_certificates_development do
+    koda_match(platform: :ios, type: "development", readonly: false)
+  end
+
+  desc "Create or renew the iOS App Store certificates and profiles in the match repository"
+  lane :update_certificates_appstore do
+    koda_match(platform: :ios, type: "appstore", readonly: false)
+  end
+
+  desc "Register an iPhone (name:, udid:) and refresh the development profiles"
+  lane :register_development_device do |options|
+    name = options[:name].to_s.strip
+    udid = options[:udid].to_s.strip
+    UI.user_error!("name is required") if name.empty?
+    UI.user_error!("udid is required") if udid.empty?
+
+    register_device(name: name, udid: udid, platform: "ios", api_key: app_store_connect_key)
+    koda_match(platform: :ios, type: "development", readonly: false)
+  end
+
+  desc "Archive the Release configuration and export a signed .ipa"
+  lane :build_sign do
+    fetch_certificates_appstore
+    build_app(
+      project: XCODE_PROJECT_PATH,
+      scheme: SCHEME,
+      configuration: "Release",
+      destination: "generic/platform=iOS",
+      export_method: "app-store",
+      export_options: { provisioningProfiles: provisioning_profiles("AppStore", :ios) },
+      xcargs: "-skipPackagePluginValidation -skipMacroValidation",
+      derived_data_path: DERIVED_DATA_PATH,
+      output_directory: File.join(OUTPUT_DIRECTORY, "ios"),
+      output_name: "Koda.ipa"
+    )
+  end
+
+  desc "Upload the latest .ipa to TestFlight and distribute it to the internal group House"
+  lane :upload_testflight do
+    ipa_path = lane_context[SharedValues::IPA_OUTPUT_PATH].to_s
+    ipa_path = File.join(OUTPUT_DIRECTORY, "ios", "Koda.ipa") if ipa_path.empty?
+    UI.user_error!("No .ipa found at #{ipa_path}; run build_sign first") unless File.exist?(ipa_path)
+    distribute_testflight(app_platform: "ios", artifact: { ipa: ipa_path })
+  end
+
+  desc "Bump the build (bump_version:true), build, upload to TestFlight and commit the version (commit_version:true)"
+  lane :pipeline_build_upload do |options|
+    latest_commit_changelog
+    bump_build_version if fastlane_boolean_option(options[:bump_version], name: "bump_version", default: true)
+    build_sign
+    upload_testflight
+    commit_version if fastlane_boolean_option(options[:commit_version], name: "commit_version", default: true)
+  end
+
+  desc "Remove DerivedData and fastlane outputs under .build/"
+  lane :clean do
+    FileUtils.rm_rf([DERIVED_DATA_PATH, OUTPUT_DIRECTORY])
+  end
+end
+
+# MARK: - macOS
+
+platform :mac do
+  desc "Run KodaTests on this Mac"
+  lane :test do
+    run_tests(
+      project: XCODE_PROJECT_PATH,
+      scheme: SCHEME,
+      destination: "platform=macOS",
+      derived_data_path: DERIVED_DATA_PATH,
+      output_directory: File.join(OUTPUT_DIRECTORY, "tests-mac"),
+      # Unit tests do not need the Mac provisioning profiles; the linker still ad-hoc signs the binaries.
+      xcargs: "-skipPackagePluginValidation -skipMacroValidation CODE_SIGNING_ALLOWED=NO"
+    )
+  end
+
+  desc "Install the macOS development certificates and profiles (read-only in CI)"
+  lane :fetch_certificates_development do
+    koda_match(platform: :mac, type: "development", readonly: ci_run?)
+  end
+
+  desc "Install the macOS App Store and Mac Installer certificates and profiles (read-only in CI)"
+  lane :fetch_certificates_appstore do
+    koda_match(platform: :mac, type: "appstore", readonly: ci_run?)
+  end
+
+  desc "Create or renew the macOS development certificates and profiles in the match repository"
+  lane :update_certificates_development do
+    koda_match(platform: :mac, type: "development", readonly: false)
+  end
+
+  desc "Create or renew the macOS App Store and Mac Installer certificates and profiles in the match repository"
+  lane :update_certificates_appstore do
+    koda_match(platform: :mac, type: "appstore", readonly: false)
+  end
+
+  desc "Register a Mac (name:, udid: its Provisioning UDID) and refresh the development profiles"
+  lane :register_development_device do |options|
+    name = options[:name].to_s.strip
+    udid = options[:udid].to_s.strip
+    UI.user_error!("name is required") if name.empty?
+    UI.user_error!("udid is required") if udid.empty?
+
+    register_device(name: name, udid: udid, platform: "mac", api_key: app_store_connect_key)
+    koda_match(platform: :mac, type: "development", readonly: false)
+  end
+
+  desc "Archive the Release configuration and export a signed installer .pkg for the Mac App Store"
+  lane :build_sign do |options|
+    fetch_certificates_appstore
+    build_options = {
+      project: XCODE_PROJECT_PATH,
+      scheme: SCHEME,
+      configuration: "Release",
+      destination: "generic/platform=macOS",
+      export_method: "app-store",
+      export_options: { provisioningProfiles: provisioning_profiles("AppStore", :mac) },
+      xcargs: "-skipPackagePluginValidation -skipMacroValidation",
+      derived_data_path: DERIVED_DATA_PATH,
+      output_directory: File.join(OUTPUT_DIRECTORY, "mac"),
+      output_name: "Koda"
+    }
+    installer_cert_name = options[:installer_cert_name].to_s.strip
+    build_options[:installer_cert_name] = installer_cert_name unless installer_cert_name.empty?
+    build_mac_app(**build_options)
+  end
+
+  desc "Upload the latest .pkg to TestFlight and distribute it to the internal group House"
+  lane :upload_testflight do
+    pkg_path = lane_context[SharedValues::PKG_OUTPUT_PATH].to_s
+    pkg_path = File.join(OUTPUT_DIRECTORY, "mac", "Koda.pkg") if pkg_path.empty?
+    UI.user_error!("No .pkg found at #{pkg_path}; run build_sign first") unless File.exist?(pkg_path)
+    distribute_testflight(app_platform: "osx", artifact: { pkg: pkg_path })
+  end
+
+  desc "Bump the build (bump_version:true), build, upload to TestFlight and commit the version (commit_version:true)"
+  lane :pipeline_build_upload do |options|
+    latest_commit_changelog
+    bump_build_version if fastlane_boolean_option(options[:bump_version], name: "bump_version", default: true)
+    build_sign
+    upload_testflight
+    commit_version if fastlane_boolean_option(options[:commit_version], name: "commit_version", default: true)
+  end
+
+  desc "Remove DerivedData and fastlane outputs under .build/"
+  lane :clean do
+    FileUtils.rm_rf([DERIVED_DATA_PATH, OUTPUT_DIRECTORY])
+  end
+end

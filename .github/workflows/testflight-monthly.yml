@@ -1,0 +1,83 @@
+# Uploads a fresh iOS and macOS build to TestFlight every month so the internal group "House" always has a
+# build that has not expired (TestFlight builds expire after 90 days). It can also be started by hand.
+name: TestFlight monthly
+
+on:
+  schedule:
+    - cron: "17 4 1 * *"
+  workflow_dispatch:
+
+concurrency:
+  group: testflight
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+
+jobs:
+  testflight:
+    runs-on: macos-26
+    timeout-minutes: 120
+    env:
+      APP_STORE_CONNECT_API_KEY_ID: ${{ secrets.APP_STORE_CONNECT_API_KEY_ID }}
+      APP_STORE_CONNECT_API_KEY_ISSUER_ID: ${{ secrets.APP_STORE_CONNECT_API_KEY_ISSUER_ID }}
+      APP_STORE_CONNECT_API_KEY_CONTENT: ${{ secrets.APP_STORE_CONNECT_API_KEY_CONTENT }}
+      MATCH_PASSWORD: ${{ secrets.MATCH_PASSWORD }}
+      MATCH_GIT_BASIC_AUTHORIZATION: ${{ secrets.MATCH_GIT_BASIC_AUTHORIZATION }}
+      MATCH_KEYCHAIN_PASSWORD: ${{ secrets.MATCH_KEYCHAIN_PASSWORD }}
+      LC_ALL: en_US.UTF-8
+      LANG: en_US.UTF-8
+      FASTLANE_SKIP_UPDATE_CHECK: "1"
+      FASTLANE_HIDE_CHANGELOG: "1"
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+
+      - name: Select Xcode
+        run: sudo xcode-select -s "$(ls -d /Applications/Xcode_27*.app | sort -V | tail -1)"
+
+      - name: Set up Ruby
+        uses: ruby/setup-ruby@v1
+        with:
+          bundler-cache: true
+
+      - name: Cache Swift packages
+        uses: actions/cache@v4
+        with:
+          path: .build/DerivedData/SourcePackages
+          key: spm-release-${{ hashFiles('Koda.xcodeproj/project.xcworkspace/xcshareddata/swiftpm/Package.resolved') }}
+
+      - name: Install SwiftLint
+        run: brew install swiftlint
+
+      - name: Write the Supabase publishable key
+        env:
+          SUPABASE_PUBLISHABLE_KEY: ${{ secrets.SUPABASE_PUBLISHABLE_KEY }}
+        run: |
+          # Optional until the Supabase project exists; the build still succeeds without it.
+          printf 'SUPABASE_PUBLISHABLE_KEY = %s\n' "$SUPABASE_PUBLISHABLE_KEY" > Configuration/Koda.private.xcconfig
+
+      - name: Bump the build number
+        run: scripts/bump_build_version.sh
+
+      # Each lane creates (once) a temporary keychain protected by MATCH_KEYCHAIN_PASSWORD and runs match read-only.
+      - name: iOS → TestFlight
+        run: bundle exec fastlane ios pipeline_build_upload bump_version:false commit_version:false
+
+      - name: macOS → TestFlight
+        run: bundle exec fastlane mac pipeline_build_upload bump_version:false commit_version:false
+
+      - name: Commit the build number
+        run: |
+          build_number=$(scripts/get_build_version.sh)
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git commit -m "chore: bump build to ${build_number} [skip ci]" -- Configuration/version.xcconfig
+          git push origin HEAD:main
+
+      - name: Remove the temporary keychain
+        if: always()
+        run: security delete-keychain koda-ci.keychain || true

@@ -1,0 +1,11 @@
+# For more information about the Appfile, see:
+#     https://docs.fastlane.tools/advanced/#appfile
+
+require "dotenv"
+
+Dotenv.load(File.expand_path(".env", __dir__))
+
+# The app (iOS + macOS) and its widget extension. Both App IDs, the App Group and the App Store Connect
+# record already exist in the Apple Developer portal; fastlane never creates them.
+app_identifier("com.kodalabs.app")
+team_id("MUDCX7X324")

@@ -1,0 +1,11 @@
+# Koda's own private certificates repository (not Gotty's). match reads its passphrase from MATCH_PASSWORD and,
+# in CI, the repository credentials from MATCH_GIT_BASIC_AUTHORIZATION (base64 of "githubuser:token").
+git_url("https://github.com/koda-laboratory/mobile-macos-ios-certs.git")
+storage_mode("git")
+git_branch("main")
+type("development") # The default type; lanes select development or appstore explicitly.
+platform("ios")     # The default platform; the `platform :mac` lanes pass "macos".
+app_identifier(["com.kodalabs.app", "com.kodalabs.app.widgets"])
+
+# Public team identifier.
+team_id("MUDCX7X324")
