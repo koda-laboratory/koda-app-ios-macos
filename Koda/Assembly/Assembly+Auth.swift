@@ -45,7 +45,8 @@ extension Assembly {
                     deviceRepository: resolver.required(DeviceRepository.self),
                     authRepository: resolver.required(AuthRepository.self),
                     sessionService: resolver.required(SessionService.self),
-                    localDataRepository: resolver.required(LocalDataRepository.self)
+                    localDataRepository: resolver.required(LocalDataRepository.self),
+                    lockService: resolver.required(BiometricLockService.self)
                 )
             }
 
@@ -63,6 +64,26 @@ extension Assembly {
             container.register(ObserveHouseholdUseCase.self) { resolver in
                 ObserveHouseholdUseCaseImpl(meRepository: resolver.required(MeRepository.self))
             }
+
+            container.register(UpdateHouseholdSettingsUseCase.self) { resolver in
+                UpdateHouseholdSettingsUseCaseImpl(meRepository: resolver.required(MeRepository.self))
+            }
         }
+    }
+}
+
+// MARK: - ViewModels
+
+extension Assembly {
+    static func makeLoginViewModel(container: DependencyContainer = .shared) -> LoginViewModel {
+        LoginViewModel(login: container.required(LoginUseCase.self))
+    }
+
+    static func makeLockViewModel(container: DependencyContainer = .shared) -> LockViewModel {
+        LockViewModel(
+            observeLock: container.required(ObserveAppLockUseCase.self),
+            unlockApp: container.required(UnlockAppUseCase.self),
+            unlockReason: String(localized: "lock.reason")
+        )
     }
 }

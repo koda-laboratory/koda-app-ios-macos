@@ -13,11 +13,11 @@ struct KodaApp: App {
 
     var body: some Scene {
         WindowGroup {
-            if ProcessInfo.processInfo.skipsAppBootstrap {
+            if let coordinator = appDelegate.coordinator {
+                KodaRootView(coordinator: coordinator)
+            } else {
                 // Previews and unit tests only need the process; skip the app bootstrap.
                 EmptyView()
-            } else {
-                KodaRootView()
             }
         }
         .onChange(of: scenePhase) { _, newPhase in
@@ -33,25 +33,45 @@ struct KodaApp: App {
                 }
             #endif
         }
+        .commands {
+            KodaCommands(coordinator: appDelegate.coordinator)
+        }
+        #if os(macOS)
+            .defaultSize(width: 1280, height: 800)
+        #endif
 
         #if os(macOS)
             Settings {
-                ContentUnavailableView("common.coming-soon", systemImage: "person.crop.circle")
-                    .frame(width: 420, height: 280)
+                if let coordinator = appDelegate.coordinator {
+                    SettingsRootView(coordinator: coordinator)
+                }
             }
         #endif
     }
 }
 
-/// The top-level view. Temporary: shows the design system until the tab root of Phase 3 exists.
-struct KodaRootView: View {
-    @State private var appRouter = AppRouter()
+/// Menu commands (Mac menu bar, and a hardware keyboard on iPhone): ⌘N new recipe, ⌘⇧L shopping list.
+struct KodaCommands: Commands {
+    let coordinator: AppLifecycleCoordinator?
 
-    var body: some View {
-        AppTabNavigationStack(tab: .today) {
-            ThemeShowcaseView()
+    var body: some Commands {
+        CommandGroup(after: .newItem) {
+            Button("command.new-recipe") {
+                coordinator?.router.request(.newRecipe)
+            }
+            .keyboardShortcut("n")
+            .disabled(!isSignedIn)
+
+            Button("command.shopping-list") {
+                coordinator?.router.selectedTab = .shopping
+            }
+            .keyboardShortcut("l", modifiers: [.command, .shift])
+            .disabled(!isSignedIn)
         }
-        .environment(appRouter)
-        .tint(KodaColor.brand)
+    }
+
+    private var isSignedIn: Bool {
+        if case .signedIn = coordinator?.sessionState { return true }
+        return false
     }
 }

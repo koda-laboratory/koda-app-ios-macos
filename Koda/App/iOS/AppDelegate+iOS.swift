@@ -1,10 +1,12 @@
 #if os(iOS)
     import UIKit
+    import UserNotifications
 
     @MainActor
-    final class AppDelegate: NSObject, UIApplicationDelegate {
-        /// Created on launch unless the process only hosts tests or previews.
-        private(set) var coordinator: AppLifecycleCoordinator?
+    final class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCenterDelegate {
+        /// `nil` while the process only hosts tests or previews.
+        let coordinator: AppLifecycleCoordinator? =
+            ProcessInfo.processInfo.skipsAppBootstrap ? nil : Assembly.makeAppLifecycleCoordinator()
 
         private var loggerService: any LoggerService {
             DependencyContainer.shared.required(LoggerService.self)
@@ -14,11 +16,9 @@
             _ application: UIApplication,
             didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]? = nil
         ) -> Bool {
-            guard !ProcessInfo.processInfo.skipsAppBootstrap else { return true }
+            guard let coordinator else { return true }
             loggerService.debug("didFinishLaunching (iOS)")
-
-            let coordinator = Assembly.makeAppLifecycleCoordinator()
-            self.coordinator = coordinator
+            UNUserNotificationCenter.current().delegate = self
 
             // The BGAppRefreshTask handler must be registered before launch finishes.
             if let identifier = AppEnvironment.backgroundSyncTaskIdentifier {
@@ -62,6 +62,25 @@
             case .noData, .skipped: .noData
             case .failed: .failed
             }
+        }
+
+        // MARK: - Visible notifications (defrost reminder)
+
+        nonisolated func userNotificationCenter(
+            _ center: UNUserNotificationCenter,
+            willPresent notification: UNNotification
+        ) async -> UNNotificationPresentationOptions {
+            [.banner, .list, .sound]
+        }
+
+        nonisolated func userNotificationCenter(
+            _ center: UNUserNotificationCenter,
+            didReceive response: UNNotificationResponse
+        ) async {
+            guard let route = KodaNotification.route(for: response.notification.request.content.userInfo) else {
+                return
+            }
+            await MainActor.run { coordinator?.open(route) }
         }
     }
 #endif

@@ -1,21 +1,21 @@
 #if os(macOS)
     import AppKit
+    import UserNotifications
 
     @MainActor
-    final class AppDelegate: NSObject, NSApplicationDelegate {
-        /// Created on launch unless the process only hosts tests or previews.
-        private(set) var coordinator: AppLifecycleCoordinator?
+    final class AppDelegate: NSObject, NSApplicationDelegate, UNUserNotificationCenterDelegate {
+        /// `nil` while the process only hosts tests or previews.
+        let coordinator: AppLifecycleCoordinator? =
+            ProcessInfo.processInfo.skipsAppBootstrap ? nil : Assembly.makeAppLifecycleCoordinator()
 
         private var loggerService: any LoggerService {
             DependencyContainer.shared.required(LoggerService.self)
         }
 
         func applicationDidFinishLaunching(_ notification: Notification) {
-            guard !ProcessInfo.processInfo.skipsAppBootstrap else { return }
+            guard let coordinator else { return }
             loggerService.debug("didFinishLaunching (macOS)")
-
-            let coordinator = Assembly.makeAppLifecycleCoordinator()
-            self.coordinator = coordinator
+            UNUserNotificationCenter.current().delegate = self
             Task { await coordinator.applicationDidFinishLaunching() }
         }
 
@@ -54,6 +54,25 @@
             guard let coordinator else { return }
             loggerService.debug("Silent push received.")
             Task { await coordinator.handleSilentPush() }
+        }
+
+        // MARK: - Visible notifications (defrost reminder)
+
+        nonisolated func userNotificationCenter(
+            _ center: UNUserNotificationCenter,
+            willPresent notification: UNNotification
+        ) async -> UNNotificationPresentationOptions {
+            [.banner, .list, .sound]
+        }
+
+        nonisolated func userNotificationCenter(
+            _ center: UNUserNotificationCenter,
+            didReceive response: UNNotificationResponse
+        ) async {
+            guard let route = KodaNotification.route(for: response.notification.request.content.userInfo) else {
+                return
+            }
+            await MainActor.run { coordinator?.open(route) }
         }
     }
 #endif

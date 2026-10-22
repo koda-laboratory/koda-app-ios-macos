@@ -1,3 +1,4 @@
+import Foundation
 import Swinject
 
 extension Assembly {
@@ -26,6 +27,21 @@ extension Assembly {
                     expansionService: resolver.required(RecipeExpansionService.self)
                 )
             }
+            container.register(ObserveRecipeCatalogUseCase.self) { resolver in
+                ObserveRecipeCatalogUseCaseImpl(repository: resolver.required(RecipeRepository.self))
+            }
+            container.register(ObserveRecipeStatsUseCase.self) { resolver in
+                ObserveRecipeStatsUseCaseImpl(repository: resolver.required(RecipeRepository.self))
+            }
+            container.register(UpdateRecipeNotesUseCase.self) { resolver in
+                UpdateRecipeNotesUseCaseImpl(repository: resolver.required(RecipeRepository.self))
+            }
+            container.register(SaveRecipeWithContentsUseCase.self) { resolver in
+                SaveRecipeWithContentsUseCaseImpl(
+                    repository: resolver.required(RecipeRepository.self),
+                    expansionService: resolver.required(RecipeExpansionService.self)
+                )
+            }
             container.register(SaveRecipeUseCase.self) { resolver in
                 SaveRecipeUseCaseImpl(repository: resolver.required(RecipeRepository.self))
             }
@@ -45,5 +61,46 @@ extension Assembly {
                 )
             }
         }
+    }
+}
+
+// MARK: - ViewModels
+
+extension Assembly {
+    static func makeRecipesViewModel(container: DependencyContainer = .shared) -> RecipesViewModel {
+        RecipesViewModel(observeCatalog: container.required(ObserveRecipeCatalogUseCase.self))
+    }
+
+    static func makeRecipeDetailViewModel(
+        recipeID: UUID,
+        container: DependencyContainer = .shared
+    ) -> RecipeDetailViewModel {
+        RecipeDetailViewModel(
+            recipeID: recipeID,
+            useCases: RecipeDetailViewModel.UseCases(
+                observeDetail: container.required(ObserveRecipeDetailUseCase.self),
+                observeStats: container.required(ObserveRecipeStatsUseCase.self),
+                setFavorite: container.required(SetRecipeFavoriteUseCase.self),
+                updateNotes: container.required(UpdateRecipeNotesUseCase.self),
+                addRecipeToShoppingList: container.required(AddRecipeToShoppingListUseCase.self),
+                logConsumption: container.required(LogConsumptionUseCase.self)
+            )
+        )
+    }
+
+    static func makeRecipeEditorViewModel(
+        recipeID: UUID?,
+        container: DependencyContainer = .shared
+    ) -> RecipeEditorViewModel {
+        RecipeEditorViewModel(
+            recipeID: recipeID,
+            useCases: RecipeEditorViewModel.UseCases(
+                observeDetail: container.required(ObserveRecipeDetailUseCase.self),
+                observeProducts: container.required(ObserveProductsUseCase.self),
+                observeCatalog: container.required(ObserveRecipeCatalogUseCase.self),
+                saveRecipe: container.required(SaveRecipeWithContentsUseCase.self),
+                deleteRecipe: container.required(DeleteRecipeUseCase.self)
+            )
+        )
     }
 }

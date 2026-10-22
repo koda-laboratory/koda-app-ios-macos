@@ -35,7 +35,27 @@ enum AppTab: String, CaseIterable, Hashable, Sendable {
 /// Push destinations available from the tab navigation stacks.
 enum AppRoute: Hashable, Sendable {
     case product(id: UUID)
+    case products
     case recipe(id: UUID)
+    case mealPlanDraft(id: UUID)
+}
+
+// MARK: - Quick Action
+
+/// App-wide shortcuts (the "+" button, Mac menu commands, notifications). Selecting one switches to its section;
+/// the section's screen consumes it and opens its own feature-owned sheet or focus.
+enum AppQuickAction: Hashable, Sendable {
+    case addToShopping
+    case planMeal
+    case newRecipe
+
+    var tab: AppTab {
+        switch self {
+        case .addToShopping: .shopping
+        case .planMeal: .planning
+        case .newRecipe: .recipes
+        }
+    }
 }
 
 // MARK: - Router
@@ -46,6 +66,35 @@ enum AppRoute: Hashable, Sendable {
 final class AppRouter {
     private var paths: [AppTab: [AppRoute]] = [:]
     var selectedTab = AppTab.today
+    /// A quick action waiting for its section's screen to handle it.
+    private(set) var pendingAction: AppQuickAction?
+
+    init(selectedTab: AppTab = .today) {
+        self.selectedTab = selectedTab
+    }
+
+    func request(_ action: AppQuickAction) {
+        selectedTab = action.tab
+        pendingAction = action
+    }
+
+    /// Returns `true` (and clears it) when `action` is pending.
+    func consume(_ action: AppQuickAction) -> Bool {
+        guard pendingAction == action else { return false }
+        pendingAction = nil
+        return true
+    }
+
+    /// Opens a route in its natural section (notifications, deep links).
+    func open(_ route: AppRoute) {
+        let tab: AppTab =
+            switch route {
+            case .recipe, .products, .product: .recipes
+            case .mealPlanDraft: .planning
+            }
+        selectedTab = tab
+        paths[tab] = [route]
+    }
 
     func path(for tab: AppTab) -> [AppRoute] {
         paths[tab] ?? []
@@ -100,14 +149,20 @@ struct AppTabNavigationStack<Content: View>: View {
 
 // MARK: - Destination
 
+/// The single resolver from `AppRoute` to a screen. Screens are built by their assembly factories.
 struct AppRouteDestination: View {
     let route: AppRoute
 
     var body: some View {
-        // Feature screens arrive in Phase 3; until then every destination is a placeholder.
         switch route {
-        case .product, .recipe:
-            ContentUnavailableView("common.coming-soon", systemImage: "hammer")
+        case .recipe(let id):
+            RecipeDetailView(viewModel: Assembly.makeRecipeDetailViewModel(recipeID: id))
+        case .products:
+            ProductsView(viewModel: Assembly.makeProductsViewModel())
+        case .product(let id):
+            ProductEditorView(viewModel: Assembly.makeProductEditorViewModel(productID: id))
+        case .mealPlanDraft(let id):
+            DraftReviewView(viewModel: Assembly.makeDraftReviewViewModel(draftID: id))
         }
     }
 }

@@ -1,3 +1,4 @@
+import Foundation
 import Swinject
 
 extension Assembly {
@@ -32,6 +33,12 @@ extension Assembly {
             container.register(PlanMealUseCase.self) { resolver in
                 PlanMealUseCaseImpl(repository: resolver.required(PlanningRepository.self))
             }
+            container.register(UpdatePlannedMealUseCase.self) { resolver in
+                UpdatePlannedMealUseCaseImpl(repository: resolver.required(PlanningRepository.self))
+            }
+            container.register(SkipMealUseCase.self) { resolver in
+                SkipMealUseCaseImpl(repository: resolver.required(PlanningRepository.self))
+            }
             container.register(RemovePlannedMealUseCase.self) { resolver in
                 RemovePlannedMealUseCaseImpl(repository: resolver.required(PlanningRepository.self))
             }
@@ -57,5 +64,48 @@ extension Assembly {
                 )
             }
         }
+    }
+}
+
+// MARK: - ViewModels
+
+extension Assembly {
+    static func makePlanningViewModel(container: DependencyContainer = .shared) -> PlanningViewModel {
+        PlanningViewModel(
+            useCases: PlanningViewModel.UseCases(
+                observeWeekPlan: container.required(ObserveWeekPlanUseCase.self),
+                observePendingDrafts: container.required(ObservePendingDraftsUseCase.self),
+                observeHousehold: container.required(ObserveHouseholdUseCase.self),
+                updatePlannedMeal: container.required(UpdatePlannedMealUseCase.self),
+                removePlannedMeal: container.required(RemovePlannedMealUseCase.self),
+                discardDraft: container.required(DiscardDraftUseCase.self)
+            )
+        )
+    }
+
+    static func makePlanMealViewModel(
+        request: PlanMealRequest,
+        container: DependencyContainer = .shared
+    ) -> PlanMealViewModel {
+        PlanMealViewModel(
+            request: request,
+            planMeal: container.required(PlanMealUseCase.self),
+            updatePlannedMeal: container.required(UpdatePlannedMealUseCase.self),
+            removePlannedMeal: container.required(RemovePlannedMealUseCase.self),
+            observeRecipeCatalog: container.required(ObserveRecipeCatalogUseCase.self),
+            observeHousehold: container.required(ObserveHouseholdUseCase.self)
+        )
+    }
+
+    static func makeDraftReviewViewModel(
+        draftID: UUID,
+        container: DependencyContainer = .shared
+    ) -> DraftReviewViewModel {
+        DraftReviewViewModel(
+            draftID: draftID,
+            observePendingDrafts: container.required(ObservePendingDraftsUseCase.self),
+            acceptDraft: container.required(AcceptDraftUseCase.self),
+            discardDraft: container.required(DiscardDraftUseCase.self)
+        )
     }
 }

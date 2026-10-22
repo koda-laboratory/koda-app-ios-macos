@@ -10,6 +10,25 @@ extension Assembly {
             registerSync(in: container)
             registerDevice(in: container)
             registerLock(in: container)
+            registerNotifications(in: container)
+        }
+
+        private func registerNotifications(in container: Container) {
+            container.register(UserNotificationDataSource.self) { _ in UserNotificationCenterDataSource() }
+                .inObjectScope(.container)
+
+            container.register(NotificationRepository.self) { resolver in
+                NotificationRepositoryImpl(dataSource: resolver.required(UserNotificationDataSource.self))
+            }
+            .inObjectScope(.container)
+
+            container.register(GetNotificationAuthorizationUseCase.self) { resolver in
+                GetNotificationAuthorizationUseCaseImpl(repository: resolver.required(NotificationRepository.self))
+            }
+
+            container.register(RequestNotificationAuthorizationUseCase.self) { resolver in
+                RequestNotificationAuthorizationUseCaseImpl(repository: resolver.required(NotificationRepository.self))
+            }
         }
 
         private func registerInfrastructure(in container: Container) {
@@ -236,6 +255,10 @@ extension Assembly {
 
             container.register(UnlockAppUseCase.self) { resolver in
                 UnlockAppUseCaseImpl(lockService: resolver.required(BiometricLockService.self))
+            }
+
+            container.register(GetLockPolicyUseCase.self) { resolver in
+                GetLockPolicyUseCaseImpl(lockService: resolver.required(BiometricLockService.self))
             }
 
             container.register(UpdateLockPolicyUseCase.self) { resolver in

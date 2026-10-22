@@ -1,7 +1,7 @@
 import Foundation
 import Observation
 
-/// Session state the future root view switches on (login vs. tabs).
+/// Session state the root view switches on (login vs. tabs).
 enum AppSessionState: Sendable, Equatable {
     case restoring
     case signedOut
@@ -16,6 +16,8 @@ final class AppLifecycleCoordinator {
     // MARK: - Properties
 
     private(set) var sessionState = AppSessionState.restoring
+    /// The app-wide navigation state, shared by the main window, notifications and Mac menu commands.
+    let router = AppRouter()
 
     @ObservationIgnored private let restoreSession: any RestoreSessionUseCase
     @ObservationIgnored private let login: any LoginUseCase
@@ -67,6 +69,7 @@ final class AppLifecycleCoordinator {
     /// Cold start: restores the session from the Keychain without network and starts syncing in the background.
     func applicationDidFinishLaunching() async {
         observeForcedLogin()
+        KodaNotification.registerCategories()
         await lockService.applicationDidLaunch()
 
         guard let session = await restoreSession.execute() else {
@@ -97,14 +100,36 @@ final class AppLifecycleCoordinator {
     /// Password login, then `/me`, push registration and a first sync.
     func signIn(email: String, password: String) async throws(KodaError) {
         let context = try await login.execute(email: email, password: password)
-        sessionState = .signedIn(userID: context.userID.uuidString.lowercased())
+        await didSignIn(userID: context.userID.uuidString.lowercased())
+    }
+
+    /// The login screen completed `LoginUseCase`: enter the app and start sync and push registration.
+    func didSignIn(userID: String) async {
+        router.popToRoot(in: router.selectedTab)
+        router.selectedTab = .today
+        sessionState = .signedIn(userID: userID)
         await startSignedInServices(trigger: .login)
     }
 
     func signOut() async throws(KodaError) {
         try await logout.execute()
-        await lockService.reset()
+        didSignOut()
+    }
+
+    /// Profile completed `LogoutUseCase` (which already cleared the session, the database and the lock).
+    func didSignOut() {
+        for tab in AppTab.allCases {
+            router.popToRoot(in: tab)
+        }
         sessionState = .signedOut
+    }
+
+    // MARK: - Notifications
+
+    /// A tapped defrost notification (default tap or "Ver receta").
+    func open(_ route: AppRoute) {
+        guard case .signedIn = sessionState else { return }
+        router.open(route)
     }
 
     // MARK: - Push and background
