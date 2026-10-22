@@ -23,7 +23,10 @@ final class DependencyContainer: Sendable {
     }
 
     private static var productionAssemblies: [any Swinject.Assembly] {
-        [Assembly.Core(), Assembly.Auth()]
+        [
+            Assembly.Core(), Assembly.Auth(), Assembly.Products(), Assembly.Recipes(), Assembly.Planning(),
+            Assembly.Shopping(),
+        ]
     }
 
     private static func makeResolver(assemblies: [any Swinject.Assembly]) -> Resolver {
