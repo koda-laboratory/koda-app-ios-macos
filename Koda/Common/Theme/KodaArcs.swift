@@ -1,116 +1,135 @@
 import SwiftUI
 
-// MARK: - Arc Shape
+// MARK: - U Shape
 
-/// One "U": two vertical arms joined by a half circle at the bottom, inset from the bounding rect.
-/// The path starts at the top of the left arm, so trimming it fills the "U" from left to right.
-struct KodaUArc: Shape {
+/// One filled "U" hanging from the top edge: two vertical arms joined by a half circle at the bottom.
+///
+/// Every nested U shares the same arc centre (`maxY - width / 2`), so inner shapes end higher and the bands keep
+/// the same thickness all around, like the reference artwork.
+struct KodaUShape: Shape {
+    /// Horizontal inset of this U inside the outer bounds.
     var inset: CGFloat
+    /// `false` draws only the outline of the arms and the bottom (no top edge), for the dashed pending band.
+    var closesTop = true
 
     func path(in rect: CGRect) -> Path {
-        let radius = max(rect.width / 2 - inset, 0)
+        let outerRadius = rect.width / 2
+        let radius = max(outerRadius - inset, 0)
+        let centerY = rect.maxY - outerRadius
         let left = rect.minX + inset
         let right = rect.maxX - inset
-        let centerY = max(rect.maxY - inset - radius, rect.minY)
         var path = Path()
         path.move(to: CGPoint(x: left, y: rect.minY))
         path.addLine(to: CGPoint(x: left, y: centerY))
-        path.addRelativeArc(
+        path.addArc(
             center: CGPoint(x: rect.midX, y: centerY),
             radius: radius,
             startAngle: .degrees(180),
-            delta: .degrees(-180)
+            endAngle: .degrees(0),
+            clockwise: true
         )
         path.addLine(to: CGPoint(x: right, y: rect.minY))
+        if closesTop {
+            path.closeSubpath()
+        }
         return path
     }
 }
 
 // MARK: - Arcs
 
-/// Signature motif: concentric "U" arcs in onyx, walnut and taupe.
-///
-/// Each arc can be partially filled (`progress` 0…1). In the Today hero every arc is a meal of the day and
-/// fills when it is marked as eaten; login and empty states show them fully filled.
+/// Signature motif: three nested "U" shapes hanging from the top — onyx outside, dark walnut in the middle and
+/// rosy taupe inside. Decorative (login, empty states, detail headers).
 struct KodaArcs: View {
-    struct Arc: Identifiable, Sendable {
-        let id: Int
-        let color: Color
-        let progress: Double
-    }
+    var colors: [Color] = [KodaColor.onyx, KodaColor.walnut, KodaColor.taupe]
+    /// Height / width of the outer U. The reference artwork is slightly taller than wide.
+    var aspectRatio: CGFloat = 132.0 / 112.0
 
-    let arcs: [Arc]
-    var lineWidth: CGFloat
-    var gap: CGFloat
+    var body: some View {
+        GeometryReader { proxy in
+            let band = proxy.size.width / 2 / (CGFloat(colors.count) + 0.15)
+            ZStack {
+                ForEach(Array(colors.enumerated()), id: \.offset) { index, color in
+                    KodaUShape(inset: CGFloat(index) * band)
+                        .fill(color)
+                }
+            }
+        }
+        .aspectRatio(1 / aspectRatio, contentMode: .fit)
+        .accessibilityHidden(true)
+    }
+}
+
+// MARK: - Progress Arcs
+
+/// The Today hero: one band per meal (breakfast outside, lunch, dinner inside). A done band is filled; a pending
+/// one keeps the hero background with a dashed outline.
+struct KodaProgressArcs: View {
+    let bandsDone: [Bool]
+    let doneCount: Int
+    let totalCount: Int
+    /// Colours of the done bands, outermost first.
+    var doneColors: [Color] = [KodaColor.taupe, KodaColor.taupeLight, KodaColor.cream]
+    var pendingColor: Color = KodaColor.walnutDeep
+    var outlineColor: Color = KodaColor.taupe
 
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
-    /// - Parameters:
-    ///   - progress: fill of each arc from the outermost inwards. Defaults to three filled arcs.
-    ///   - colors: arc colors from the outermost inwards; cycles when there are more arcs than colors.
-    init(
-        progress: [Double] = [1, 1, 1],
-        colors: [Color] = [KodaColor.onyx, KodaColor.walnut, KodaColor.taupe],
-        lineWidth: CGFloat = 18,
-        gap: CGFloat = 10
-    ) {
-        let palette = colors.isEmpty ? [KodaColor.walnut] : colors
-        self.arcs = progress.enumerated().map { index, value in
-            Arc(id: index, color: palette[index % palette.count], progress: min(max(value, 0), 1))
-        }
-        self.lineWidth = lineWidth
-        self.gap = gap
-    }
-
     var body: some View {
-        ZStack {
-            ForEach(arcs) { arc in
-                let shape = KodaUArc(inset: lineWidth / 2 + CGFloat(arc.id) * (lineWidth + gap))
-                shape
-                    .stroke(arc.color.opacity(0.18), style: strokeStyle)
-                shape
-                    .trim(from: 0, to: arc.progress)
-                    .stroke(arc.color, style: strokeStyle)
-                    .animation(reduceMotion ? nil : .spring(duration: 0.6), value: arc.progress)
+        GeometryReader { proxy in
+            let band = proxy.size.width / 2 / (CGFloat(bandsDone.count) + 0.15)
+            ZStack {
+                ForEach(Array(bandsDone.enumerated()), id: \.offset) { index, isDone in
+                    let inset = CGFloat(index) * band
+                    KodaUShape(inset: inset)
+                        .fill(isDone ? doneColors[index % doneColors.count] : pendingColor)
+                    if !isDone {
+                        KodaUShape(inset: inset + 1, closesTop: false)
+                            .stroke(outlineColor, style: StrokeStyle(lineWidth: 2, lineCap: .round, dash: [4, 5]))
+                    }
+                }
             }
+            .animation(reduceMotion ? nil : .spring(duration: 0.6), value: bandsDone)
         }
-        .aspectRatio(0.8, contentMode: .fit)
-        .accessibilityHidden(true)
-    }
-
-    private var strokeStyle: StrokeStyle {
-        StrokeStyle(lineWidth: lineWidth, lineCap: .round, lineJoin: .round)
+        .aspectRatio(112.0 / 132.0, contentMode: .fit)
+        .accessibilityElement()
+        .accessibilityLabel(Text("today.progress.accessibility-label"))
+        .accessibilityValue(Text("today.progress.accessibility-value \(doneCount) \(totalCount)"))
     }
 }
 
 // MARK: - Previews
 
 #if DEBUG
-    #Preview("Arcs · filled") {
+    #Preview("Arcs · iPhone") {
         KodaArcs()
             .frame(width: 220)
             .padding()
             .kodaPreview()
     }
 
-    #Preview("Arcs · meals of the day") {
-        @Previewable @State var progress: [Double] = [1, 0.5, 0]
-        VStack(spacing: KodaSpacing.l) {
-            KodaArcs(progress: progress, colors: [KodaColor.taupe, KodaColor.cream, KodaColor.walnutLight])
-                .frame(width: 200)
-            Button("Comer") {
-                progress = progress.map { min($0 + 0.5, 1) }
-            }
-            .buttonStyle(.glassProminent)
+    #Preview("Arcs · progress") {
+        HStack(spacing: KodaSpacing.l) {
+            KodaProgressArcs(bandsDone: [true, true, false], doneCount: 2, totalCount: 3)
+            KodaProgressArcs(bandsDone: [true, false, false], doneCount: 1, totalCount: 3)
+            KodaProgressArcs(bandsDone: [true, true, true], doneCount: 3, totalCount: 3)
         }
+        .frame(height: 132)
         .padding(KodaSpacing.l)
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
         .background(KodaGradient.signature)
+        .kodaPreview()
+    }
+
+    #Preview("Arcs · dark", traits: .fixedLayout(width: 400, height: 400)) {
+        KodaArcs()
+            .frame(width: 200)
+            .kodaPreview()
+            .preferredColorScheme(.dark)
     }
 
     #Preview("Arcs · Mac", traits: .fixedLayout(width: 900, height: 600)) {
-        KodaArcs(progress: [1, 1, 1, 1], lineWidth: 24)
-            .frame(width: 320)
+        KodaArcs(aspectRatio: 470.0 / 330.0)
+            .frame(width: 330)
             .kodaPreview()
     }
 #endif

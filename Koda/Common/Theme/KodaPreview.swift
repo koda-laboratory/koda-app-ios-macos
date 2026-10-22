@@ -6,6 +6,6 @@ extension View {
     func kodaPreview() -> some View {
         frame(maxWidth: .infinity, maxHeight: .infinity)
             .background(KodaColor.background)
-            .tint(KodaColor.brand)
+            .tint(KodaColor.brandText)
     }
 }

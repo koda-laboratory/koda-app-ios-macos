@@ -26,6 +26,8 @@ enum KodaColor {
     static let walnutDeep = Color(hex: 0x2A140C)
     /// Taupe at 20 %: chip fills and separators.
     static let taupeSoft = Color(hex: 0xCCA097, opacity: 0.2)
+    /// `#E9D3CD`: light taupe, done band of the Today arcs and soft text on walnut.
+    static let taupeLight = Color(hex: 0xE9D3CD)
 
     // MARK: Semantic (adaptive)
 
@@ -34,8 +36,21 @@ enum KodaColor {
     static let surfaceElevated = Color("KodaSurfaceElevated")
     static let textPrimary = Color("KodaTextPrimary")
     static let textSecondary = Color("KodaTextSecondary")
+    /// Eyebrows and section labels ("COMIDA", "EN EL CONGELADOR").
+    static let textTertiary = Color("KodaTextTertiary")
+    /// Chip and icon-tile fills (`#F1E2DE` / walnut deep).
+    static let chip = Color("KodaChip")
+    /// Soft accent surface: suggestion card (`#E9D3CD` / walnut deep).
+    static let accentSoft = Color("KodaAccentSoft")
+    /// Segmented-control track (`#EADBD6` / walnut deep).
+    static let control = Color("KodaControl")
+    /// High-contrast secondary action: onyx in light, taupe in dark.
+    static let inverse = Color("KodaInverse")
+    static let onInverse = Color("KodaOnInverse")
     static let brand = Color("KodaBrand")
     static let onBrand = Color("KodaOnBrand")
+    /// Brand-coloured text and glyphs on the background or cards: walnut in light, taupe in dark (contrast).
+    static let brandText = Color("KodaBrandText")
     static let accent = Color("KodaAccent")
     static let separator = Color("KodaSeparator")
     /// `#B4533A`, desaturated so it does not break the palette.
