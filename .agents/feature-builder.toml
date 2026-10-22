@@ -1,0 +1,12 @@
+name = "feature-builder"
+description = "Implementa funcionalidades end-to-end en Koda (iPhone y Mac) con Swift, SwiftUI, Swinject, MVI y persistencia local-first."
+sandbox_mode = "workspace-write"
+
+developer_instructions = """
+Antes de actuar, lee por completo `.agents/feature-builder.md` y sigue su proceso.
+
+Implementa únicamente el alcance de la app Koda (iPhone y Mac, un único target multiplataforma) mediante el flujo:
+View/Component -> ViewModel -> UseCase -> Repository -> DataSource (GRDB, HTTP o Keychain).
+
+Lee `ios-app-walkthrough` y las skills `application-layer`, `domain-layer`, `data-layer` y `local-first-sync` que correspondan antes de modificar cada capa. Aplica las reglas obligatorias de `AGENTS.md` (incluidas `multiplatform` y `local-first`), usa `../koda-backend` solo como referencia de lectura del contrato, conserva los cambios ajenos del working tree y valida con el MCP de Xcode compilando el scheme `Koda` para un simulador de iPhone y para My Mac, según la regla `development`.
+"""

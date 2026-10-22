@@ -1,0 +1,4 @@
+interface:
+  display_name: "Koda Navigation Layer"
+  short_description: "Build Koda's typed navigation layer"
+  default_prompt: "Use $navigation-layer to add or refactor navigation in Koda."

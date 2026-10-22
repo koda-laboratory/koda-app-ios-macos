@@ -1,0 +1,54 @@
+[mcp_servers.xcode]
+command = "xcrun"
+args = ["mcpbridge"]
+startup_timeout_sec = 30
+tool_timeout_sec = 300
+required = false
+
+[mcp_servers.xcode.tools.GetBuildLog]
+approval_mode = "approve"
+
+[mcp_servers.xcode.tools.BuildProject]
+approval_mode = "approve"
+
+[mcp_servers.xcode.tools.RenderPreview]
+approval_mode = "approve"
+
+[mcp_servers.xcode.tools.GetTestList]
+approval_mode = "approve"
+
+[mcp_servers.xcode.tools.XcodeListWindows]
+approval_mode = "approve"
+
+[mcp_servers.xcode.tools.XcodeGlob]
+approval_mode = "approve"
+
+[mcp_servers.xcode.tools.XcodeListNavigatorIssues]
+approval_mode = "approve"
+
+[mcp_servers.xcode.tools.XcodeListWorkspaces]
+approval_mode = "approve"
+
+[mcp_servers.xcode.tools.XcodeOpenWorkspace]
+approval_mode = "approve"
+
+[mcp_servers.xcode.tools.XcodeListSchemes]
+approval_mode = "approve"
+
+[mcp_servers.xcode.tools.XcodeSwitchScheme]
+approval_mode = "approve"
+
+[mcp_servers.xcode.tools.XcodeListTargets]
+approval_mode = "approve"
+
+[mcp_servers.xcode.tools.GetTargetBuildSettings]
+approval_mode = "approve"
+
+[mcp_servers.xcode.tools.XcodeCloseWorkspace]
+approval_mode = "approve"
+
+[mcp_servers.xcode.tools.UpdateTargetBuildSetting]
+approval_mode = "approve"
+
+[mcp_servers.xcode.tools.XcodeListRunDestinations]
+approval_mode = "approve"
