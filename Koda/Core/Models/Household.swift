@@ -20,6 +20,7 @@ struct Household: Sendable, Equatable, Identifiable {
     let timeZone: TimeZone
     let role: HouseholdRole
     let members: [HouseholdMember]
+    var settings: HouseholdSettings = .default
 }
 
 /// The signed-in user and the household every new row belongs to (cached from `GET /me`).

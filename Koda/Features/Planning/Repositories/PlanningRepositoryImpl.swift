@@ -49,6 +49,19 @@ final class PlanningRepositoryImpl: PlanningRepository, Sendable {
         }
     }
 
+    func entries(from: LocalDay, through: LocalDay) async throws(KodaError) -> [MealPlanEntry] {
+        let lower = from.description
+        let upper = through.description
+        return try await database.read { db in
+            let rows = try Row.fetchAll(
+                db,
+                sql: Self.entrySelect + " WHERE e.deleted_at IS NULL AND e.draft_id IS NULL AND e.date BETWEEN ? AND ?",
+                arguments: [lower, upper]
+            )
+            return MealPlanEntry.ordered(rows.compactMap(MealPlanEntry.init(row:)))
+        }
+    }
+
     // MARK: - Mutations
 
     @discardableResult
@@ -77,6 +90,8 @@ final class PlanningRepositoryImpl: PlanningRepository, Sendable {
                     note: input.note,
                     position: position,
                     draftId: nil,
+                    scheduledTime: input.scheduledTime?.databaseValue,
+                    skippedAt: nil,
                     createdAt: nil,
                     updatedAt: nil,
                     updatedBy: nil,
@@ -86,13 +101,62 @@ final class PlanningRepositoryImpl: PlanningRepository, Sendable {
                 ),
                 in: db
             )
-            guard
-                let row = try Row.fetchOne(db, sql: Self.entrySelect + " WHERE e.id = ?", arguments: [record.id]),
-                let entry = MealPlanEntry(row: row)
-            else {
-                throw KodaError(type: .internal, reason: "Invalid meal plan entry \(record.id).")
+            return try Self.fetchEntry(id: record.id, in: db)
+        }
+    }
+
+    @discardableResult
+    func updateEntry(id: UUID, _ update: MealPlanEntryUpdate) async throws(KodaError) -> MealPlanEntry {
+        let writer = writer
+        return try await database.write { db in
+            guard var record = try MealPlanEntryRecord.live().filter(key: id.lowercasedString).fetchOne(db) else {
+                throw KodaError(type: .notFound, reason: "Meal plan entry \(id) not found.")
             }
-            return entry
+            let day = update.day.description
+            if record.date != day || record.slot != update.slot.rawValue {
+                record.position =
+                    try Int.fetchOne(
+                        db,
+                        sql: """
+                            SELECT COALESCE(MAX(position), -1) + 1 FROM meal_plan_entries
+                            WHERE date = ? AND slot = ? AND deleted_at IS NULL AND draft_id IS NULL
+                            """,
+                        arguments: [day, update.slot.rawValue]
+                    ) ?? 0
+            }
+            if record.recipeId != update.recipeID?.lowercasedString || record.date != day {
+                // A different meal or day is a new plan for that slot: it can be eaten again.
+                record.skippedAt = nil
+            }
+            record.date = day
+            record.slot = update.slot.rawValue
+            record.recipeId = update.recipeID?.lowercasedString
+            record.freeText = update.recipeID == nil ? update.freeText : nil
+            record.servings = update.servings
+            record.scheduledTime = update.scheduledTime?.databaseValue
+            try writer.save(record, in: db)
+            return try Self.fetchEntry(id: record.id, in: db)
+        }
+    }
+
+    func skipEntry(id: UUID, at date: Date) async throws(KodaError) {
+        let writer = writer
+        let timestamp = ISO8601Timestamp.string(from: date)
+        try await database.write { db in
+            let entryID = id.lowercasedString
+            guard var record = try MealPlanEntryRecord.live().filter(key: entryID).fetchOne(db) else {
+                throw KodaError(type: .notFound, reason: "Meal plan entry \(id) not found.")
+            }
+            let consumptionIDs = try String.fetchAll(
+                db,
+                sql: "SELECT id FROM consumptions WHERE meal_plan_entry_id = ? AND deleted_at IS NULL",
+                arguments: [entryID]
+            )
+            for consumptionID in consumptionIDs {
+                try writer.delete(.consumptions, id: consumptionID, in: db)
+            }
+            record.skippedAt = timestamp
+            try writer.save(record, in: db)
         }
     }
 
@@ -116,6 +180,7 @@ final class PlanningRepositoryImpl: PlanningRepository, Sendable {
                     servings: input.servings,
                     mealPlanEntryId: input.mealPlanEntryID?.lowercasedString,
                     loggedBy: context.userID,
+                    source: input.source.rawValue,
                     createdAt: nil,
                     updatedAt: nil,
                     updatedBy: nil,
@@ -147,8 +212,18 @@ final class PlanningRepositoryImpl: PlanningRepository, Sendable {
 
     // MARK: - Queries
 
+    private static func fetchEntry(id: String, in db: Database) throws -> MealPlanEntry {
+        guard let row = try Row.fetchOne(db, sql: Self.entrySelect + " WHERE e.id = ?", arguments: [id]),
+            let entry = MealPlanEntry(row: row)
+        else {
+            throw KodaError(type: .internal, reason: "Invalid meal plan entry \(id).")
+        }
+        return entry
+    }
+
     private static let entrySelect = """
         SELECT e.id, e.date, e.slot, e.recipe_id, e.free_text, e.servings, e.note, e.position, e.draft_id,
+               e.scheduled_time, e.skipped_at,
                r.name AS recipe_name, r.emoji AS recipe_emoji,
                (SELECT c.id FROM consumptions c
                 WHERE c.meal_plan_entry_id = e.id AND c.deleted_at IS NULL LIMIT 1) AS consumption_id
@@ -179,7 +254,9 @@ extension MealPlanEntry {
             note: row["note"],
             position: row["position"],
             draftID: (row["draft_id"] as String?).flatMap(UUID.init(uuidString:)),
-            consumptionID: (row["consumption_id"] as String?).flatMap(UUID.init(uuidString:))
+            consumptionID: (row["consumption_id"] as String?).flatMap(UUID.init(uuidString:)),
+            scheduledTime: (row["scheduled_time"] as String?).flatMap { LocalTime($0) },
+            skippedAt: ISO8601Timestamp.date(from: row["skipped_at"])
         )
     }
 }

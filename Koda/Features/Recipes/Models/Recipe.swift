@@ -72,3 +72,64 @@ struct RecipeIngredientInput: Sendable, Equatable {
     var quantity: Double?
     var unit: String?
 }
+
+/// How often and how recently a recipe was eaten (from `consumptions`, like the backend's `recipe_stats`).
+struct RecipeStats: Sendable, Equatable {
+    var timesEaten: Int
+    var lastEatenOn: LocalDay?
+
+    static let never = RecipeStats(timesEaten: 0, lastEatenOn: nil)
+
+    func daysSinceLastEaten(today: LocalDay) -> Int? {
+        guard let lastEatenOn else { return nil }
+        let start = lastEatenOn.startDate(in: .gmt)
+        let end = today.startDate(in: .gmt)
+        return max(Int((end.timeIntervalSince(start) / 86_400).rounded()), 0)
+    }
+}
+
+/// A recipe as the catalog lists it: searchable by ingredient and with its stats.
+struct RecipeCatalogItem: Sendable, Equatable, Identifiable {
+    let recipe: Recipe
+    let ingredientNames: [String]
+    let stats: RecipeStats
+
+    var id: UUID { recipe.id }
+}
+
+/// An ingredient row of the recipe editor (`id == nil` for a new one).
+struct RecipeIngredientDraft: Sendable, Equatable {
+    var id: UUID?
+    var productID: UUID
+    var quantity: Double?
+    var unit: String?
+}
+
+/// A sub-recipe row of the recipe editor (`id == nil` for a new one).
+struct RecipeComponentDraft: Sendable, Equatable {
+    var id: UUID?
+    var childRecipeID: UUID
+    var servingsFactor: Double
+}
+
+/// "Hace tiempo que no": recipes eaten at least once and not for a while, the longest ago first.
+enum RecipeSuggestions {
+    static func forgotten(
+        _ items: [RecipeCatalogItem],
+        today: LocalDay,
+        minimumDays: Int = 14,
+        limit: Int = 8
+    ) -> [RecipeCatalogItem] {
+        items
+            .compactMap { item -> (RecipeCatalogItem, Int)? in
+                guard let days = item.stats.daysSinceLastEaten(today: today), days >= minimumDays else { return nil }
+                return (item, days)
+            }
+            .sorted { lhs, rhs in
+                if lhs.1 != rhs.1 { return lhs.1 > rhs.1 }
+                return lhs.0.recipe.name.localizedCaseInsensitiveCompare(rhs.0.recipe.name) == .orderedAscending
+            }
+            .prefix(limit)
+            .map(\.0)
+    }
+}

@@ -261,6 +261,163 @@ final class RecipeRepositoryImpl: RecipeRepository, Sendable {
     }
 }
 
+// MARK: - Catalog, Notes and Contents
+
+extension RecipeRepositoryImpl {
+    func observeCatalog() -> AsyncStream<[RecipeCatalogItem]> {
+        database.observe { db in
+            let recipes = try RecipeRecord.live()
+                .order(Column("name").collating(.localizedCaseInsensitiveCompare))
+                .fetchAll(db)
+                .compactMap(Recipe.init(record:))
+            let ingredientRows = try Row.fetchAll(
+                db,
+                sql: """
+                    SELECT i.recipe_id, p.name FROM recipe_ingredients i
+                    JOIN products p ON p.id = i.product_id AND p.deleted_at IS NULL
+                    WHERE i.deleted_at IS NULL
+                    ORDER BY i.position
+                    """
+            )
+            var names: [String: [String]] = [:]
+            for row in ingredientRows {
+                names[row["recipe_id"], default: []].append(row["name"])
+            }
+            let stats = try Self.fetchStats(recipeID: nil, in: db)
+            return recipes.map { recipe in
+                RecipeCatalogItem(
+                    recipe: recipe,
+                    ingredientNames: names[recipe.id.lowercasedString] ?? [],
+                    stats: stats[recipe.id.lowercasedString] ?? .never
+                )
+            }
+        }
+    }
+
+    func observeStats(recipeID: UUID) -> AsyncStream<RecipeStats> {
+        let id = recipeID.lowercasedString
+        return database.observe { db in try Self.fetchStats(recipeID: id, in: db)[id] ?? .never }
+    }
+
+    func updateNotes(recipeID: UUID, notes: String?) async throws(KodaError) {
+        let writer = writer
+        try await database.write { db in
+            guard var record = try RecipeRecord.live().filter(key: recipeID.lowercasedString).fetchOne(db) else {
+                throw KodaError(type: .notFound, reason: "Recipe \(recipeID) not found.")
+            }
+            guard record.notes != notes else { return }
+            record.notes = notes
+            try writer.save(record, in: db)
+        }
+    }
+
+    func replaceContents(
+        recipeID: UUID,
+        ingredients: [RecipeIngredientDraft],
+        components: [RecipeComponentDraft]
+    ) async throws(KodaError) {
+        let writer = writer
+        try await database.write { db in
+            let parent = recipeID.lowercasedString
+            let existingIngredients = try RecipeIngredientRecord.live()
+                .filter(Column("recipe_id") == parent)
+                .fetchAll(db)
+            let keptIngredients = Set(ingredients.compactMap { $0.id?.lowercasedString })
+            for record in existingIngredients where !keptIngredients.contains(record.id) {
+                try writer.delete(.recipeIngredients, id: record.id, in: db)
+            }
+            let ingredientsByID = Dictionary(uniqueKeysWithValues: existingIngredients.map { ($0.id, $0) })
+            for (position, draft) in ingredients.enumerated() {
+                let id = draft.id?.lowercasedString ?? LocalMutationWriter.newID()
+                var record =
+                    ingredientsByID[id]
+                    ?? RecipeIngredientRecord(
+                        id: id,
+                        householdId: "",
+                        recipeId: parent,
+                        productId: draft.productID.lowercasedString,
+                        quantity: nil,
+                        unit: nil,
+                        position: position
+                    )
+                let updated = RecipeIngredientRecord(
+                    id: record.id,
+                    householdId: record.householdId,
+                    recipeId: parent,
+                    productId: draft.productID.lowercasedString,
+                    quantity: draft.quantity,
+                    unit: draft.unit,
+                    position: position
+                )
+                guard
+                    ingredientsByID[id] == nil || record.productId != updated.productId
+                        || record.quantity != updated.quantity || record.unit != updated.unit
+                        || record.position != updated.position
+                else { continue }
+                record.productId = updated.productId
+                record.quantity = updated.quantity
+                record.unit = updated.unit
+                record.position = position
+                try writer.save(record, in: db)
+            }
+
+            let existingComponents = try RecipeComponentRecord.live()
+                .filter(Column("parent_recipe_id") == parent)
+                .fetchAll(db)
+            let keptComponents = Set(components.compactMap { $0.id?.lowercasedString })
+            for record in existingComponents where !keptComponents.contains(record.id) {
+                try writer.delete(.recipeComponents, id: record.id, in: db)
+            }
+            let componentsByID = Dictionary(uniqueKeysWithValues: existingComponents.map { ($0.id, $0) })
+            for (position, draft) in components.enumerated() {
+                let id = draft.id?.lowercasedString ?? LocalMutationWriter.newID()
+                var record =
+                    componentsByID[id]
+                    ?? RecipeComponentRecord(
+                        id: id,
+                        householdId: "",
+                        parentRecipeId: parent,
+                        childRecipeId: draft.childRecipeID.lowercasedString,
+                        servingsFactor: draft.servingsFactor,
+                        position: position
+                    )
+                let isNew = componentsByID[id] == nil
+                let changed =
+                    record.childRecipeId != draft.childRecipeID.lowercasedString
+                    || record.servingsFactor != draft.servingsFactor || record.position != position
+                guard isNew || changed else { continue }
+                record.childRecipeId = draft.childRecipeID.lowercasedString
+                record.servingsFactor = draft.servingsFactor
+                record.position = position
+                try writer.save(record, in: db)
+            }
+        }
+    }
+
+    /// `recipe_stats` computed locally: times eaten and the last day, per recipe id (lowercase).
+    fileprivate static func fetchStats(recipeID: String?, in db: Database) throws -> [String: RecipeStats] {
+        let filter = recipeID == nil ? "" : " AND recipe_id = ?"
+        let rows = try Row.fetchAll(
+            db,
+            sql: """
+                SELECT recipe_id, COUNT(*) AS times, MAX(eaten_on) AS last_eaten FROM consumptions
+                WHERE deleted_at IS NULL\(filter)
+                GROUP BY recipe_id
+                """,
+            arguments: recipeID.map { [$0] } ?? []
+        )
+        var stats: [String: RecipeStats] = [:]
+        for row in rows {
+            stats[row["recipe_id"]] = RecipeStats(
+                timesEaten: row["times"],
+                lastEatenOn: (row["last_eaten"] as String?).flatMap { LocalDay($0) }
+            )
+        }
+        return stats
+    }
+
+}
+
 // MARK: - Mapping
 
 extension Recipe {

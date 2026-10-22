@@ -1,6 +1,8 @@
 /// `GET /me` of the `api` Edge Function.
 protocol MeRemoteDataSource: Sendable {
     func fetchMe() async throws(KodaError) -> MeResponseDTO
+    func updateSettings(householdID: String, _ body: HouseholdSettingsRequestDTO) async throws(KodaError)
+        -> MeHouseholdDTO
 }
 
 final class MeRemoteDataSourceImpl: MeRemoteDataSource, Sendable {
@@ -14,5 +16,13 @@ final class MeRemoteDataSourceImpl: MeRemoteDataSource, Sendable {
 
     func fetchMe() async throws(KodaError) -> MeResponseDTO {
         try await httpService.execute(KodaAPI.me(headerProvider: headerProvider))
+    }
+
+    func updateSettings(householdID: String, _ body: HouseholdSettingsRequestDTO) async throws(KodaError)
+        -> MeHouseholdDTO
+    {
+        try await httpService.execute(
+            KodaAPI.updateHouseholdSettings(householdID: householdID, body, headerProvider: headerProvider)
+        )
     }
 }

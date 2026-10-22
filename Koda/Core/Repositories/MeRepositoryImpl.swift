@@ -47,7 +47,9 @@ final class MeRepositoryImpl: MeRepository, Sendable {
                     name: household.name,
                     timezone: household.timezone,
                     role: household.role,
-                    position: position
+                    position: position,
+                    slotTimes: Self.slotTimesText(household.slotTimes),
+                    shoppingWeekday: household.shoppingWeekday
                 )
                 .insert(db)
                 for (memberPosition, member) in household.members.enumerated() {
@@ -75,6 +77,31 @@ final class MeRepositoryImpl: MeRepository, Sendable {
         return context
     }
 
+    @discardableResult
+    func updateSettings(householdID: UUID, settings: HouseholdSettings) async throws(KodaError) -> HouseholdContext {
+        let id = householdID.lowercasedString
+        let dto = try await remoteDataSource.updateSettings(
+            householdID: id,
+            HouseholdSettingsRequestDTO(
+                slotTimes: settings.slotTimes.strings,
+                shoppingWeekday: settings.shoppingWeekday
+            )
+        )
+        // A backend without the third revision answers without settings: keep what the user chose.
+        let slotTimes = Self.slotTimesText(dto.slotTimes ?? settings.slotTimes.strings)
+        let weekday = dto.shoppingWeekday ?? settings.shoppingWeekday
+        try await database.write { db in
+            try db.execute(
+                sql: "UPDATE me_households SET slot_times = ?, shopping_weekday = ? WHERE id = ?",
+                arguments: [slotTimes, weekday, id]
+            )
+        }
+        guard let context = try await cached() else {
+            throw KodaError(type: .storage, reason: "The cached household could not be read back.")
+        }
+        return context
+    }
+
     func cached() async throws(KodaError) -> HouseholdContext? {
         try await database.read(Self.fetchContext)
     }
@@ -84,6 +111,17 @@ final class MeRepositoryImpl: MeRepository, Sendable {
     }
 
     // MARK: - Mapping
+
+    private static func slotTimesText(_ strings: [String: String]?) -> String? {
+        guard let strings else { return nil }
+        let object = JSONValue.object(strings.mapValues(JSONValue.string))
+        return try? object.jsonText()
+    }
+
+    private static func slotTimeStrings(_ text: String?) -> [String: String] {
+        guard let text, case .object(let object)? = try? JSONValue.parse(jsonText: text) else { return [:] }
+        return object.compactMapValues(\.stringValue)
+    }
 
     @Sendable
     private static func fetchContext(_ db: Database) throws -> HouseholdContext? {
@@ -118,7 +156,12 @@ final class MeRepositoryImpl: MeRepository, Sendable {
                 name: household.name,
                 timeZone: TimeZone(identifier: household.timezone) ?? .household,
                 role: HouseholdRole(rawValue: household.role) ?? .member,
-                members: members
+                members: members,
+                settings: HouseholdSettings(
+                    slotTimes: SlotTimes(strings: slotTimeStrings(household.slotTimes)),
+                    shoppingWeekday: (1...7).contains(household.shoppingWeekday ?? 0)
+                        ? household.shoppingWeekday ?? 5 : 5
+                )
             )
         )
     }

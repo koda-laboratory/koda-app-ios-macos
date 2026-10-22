@@ -12,6 +12,8 @@ struct ShoppingEntryRecord: SyncedRecord, Equatable {
     var quantity: Double?
     var unit: String?
     var checked: Bool
+    /// `pending` | `have` | `frozen`; `checked` always equals `status != pending`.
+    var status: String = "pending"
     var checkedAt: String?
     var checkedBy: String?
     var nameUpdatedAt: String?
@@ -25,15 +27,16 @@ struct ShoppingEntryRecord: SyncedRecord, Equatable {
     var clientUpdatedAt: String?
     var serverSeq: Int64?
 
-    /// Maintains the per-field last-writer-wins timestamps the server resolves with: `checked_at` when `checked`
-    /// changes and `name_updated_at` when `text`, `quantity` or `unit` change.
+    /// Maintains the per-field last-writer-wins timestamps the server resolves with: `checked_at` when the
+    /// status changes and `name_updated_at` when `text`, `quantity` or `unit` change.
     mutating func prepareForLocalWrite(replacing existing: ShoppingEntryRecord?, timestamp: String) {
+        checked = status != "pending"
         guard let existing else {
             if checked { checkedAt = timestamp }
             nameUpdatedAt = timestamp
             return
         }
-        if existing.checked != checked { checkedAt = timestamp }
+        if existing.status != status || existing.checked != checked { checkedAt = timestamp }
         if existing.text != text || existing.quantity != quantity || existing.unit != unit {
             nameUpdatedAt = timestamp
         }
@@ -50,6 +53,8 @@ struct ShoppingEntryItemRecord: SyncedRecord, Equatable {
     var quantity: Double?
     var unit: String?
     var checked: Bool
+    /// `pending` | `have` | `frozen`; `checked` always equals `status != pending`.
+    var status: String = "pending"
     var checkedAt: String?
     var createdAt: String?
     var updatedAt: String?
@@ -58,10 +63,11 @@ struct ShoppingEntryItemRecord: SyncedRecord, Equatable {
     var clientUpdatedAt: String?
     var serverSeq: Int64?
 
-    /// `shopping_entry_items` only resolve `checked` per field (by `checked_at`).
+    /// `shopping_entry_items` only resolve the status group per field (by `checked_at`).
     mutating func prepareForLocalWrite(replacing existing: ShoppingEntryItemRecord?, timestamp: String) {
-        let checkedChanged = existing.map { $0.checked != checked } ?? checked
-        if checkedChanged {
+        checked = status != "pending"
+        let statusChanged = existing.map { $0.status != status || $0.checked != checked } ?? checked
+        if statusChanged {
             checkedAt = timestamp
         }
     }

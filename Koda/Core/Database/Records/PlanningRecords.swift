@@ -32,6 +32,10 @@ struct MealPlanEntryRecord: SyncedRecord, Equatable {
     var note: String?
     var position: Int
     var draftId: String?
+    /// `HH:MM:SS` override of the household slot time.
+    var scheduledTime: String?
+    /// "No lo comimos": the meal is not auto-logged again.
+    var skippedAt: String?
     var createdAt: String?
     var updatedAt: String?
     var updatedBy: String?
@@ -51,6 +55,8 @@ struct ConsumptionRecord: SyncedRecord, Equatable {
     var servings: Double?
     var mealPlanEntryId: String?
     var loggedBy: String?
+    /// `auto` | `manual` | `siri` | `mcp`.
+    var source: String = "manual"
     var createdAt: String?
     var updatedAt: String?
     var updatedBy: String?

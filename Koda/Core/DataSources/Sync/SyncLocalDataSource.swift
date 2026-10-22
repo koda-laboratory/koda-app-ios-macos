@@ -138,11 +138,15 @@ final class SyncLocalDataSourceImpl: SyncLocalDataSource, Sendable {
             for (tableName, rows) in page.changes {
                 // Tables unknown to this app version are ignored (forward compatibility).
                 guard let table = SyncedTable(rawValue: tableName), !rows.isEmpty else { continue }
-                let columns = try db.columns(in: table.rawValue).map(\.name)
-                let statement = try db.cachedStatement(sql: Self.upsertSQL(table: table, columns: columns))
+                let tableColumns = try db.columns(in: table.rawValue).map(\.name)
 
-                for row in rows {
-                    guard let id = row["id"]?.stringValue else { continue }
+                for pulledRow in rows {
+                    guard let id = pulledRow["id"]?.stringValue else { continue }
+                    let row = Self.compatibleRow(pulledRow, table: table)
+                    // Only the columns the server sent: a backend that does not know a newer local column yet
+                    // (version skew) leaves its default or current value instead of writing NULL.
+                    let columns = tableColumns.filter { row[$0] != nil }
+                    let statement = try db.cachedStatement(sql: Self.upsertSQL(table: table, columns: columns))
                     let values = try columns.map { try SyncRowCodec.databaseValue(row[$0]) }
                     try statement.execute(arguments: StatementArguments(values))
                     if db.changesCount > 0 {
@@ -177,6 +181,17 @@ final class SyncLocalDataSourceImpl: SyncLocalDataSource, Sendable {
     }
 
     // MARK: - Private Methods
+
+    /// Fills fields a backend without the third revision does not send yet: the shopping `status` follows
+    /// `checked`.
+    private static func compatibleRow(_ row: [String: JSONValue], table: SyncedTable) -> [String: JSONValue] {
+        guard table.usesFieldLevelConflicts, row["status"] == nil, case .bool(let checked)? = row["checked"] else {
+            return row
+        }
+        var row = row
+        row["status"] = .string(checked ? "have" : "pending")
+        return row
+    }
 
     /// Upsert by id. Rows are complete, so the order of tables and rows does not matter; an older copy
     /// (lower `server_seq`) never overwrites a newer one.

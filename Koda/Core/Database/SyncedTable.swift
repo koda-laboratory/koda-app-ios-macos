@@ -12,6 +12,8 @@ enum SyncedTable: String, CaseIterable, Sendable, Codable {
     case consumptions
     case shoppingEntries = "shopping_entries"
     case shoppingEntryItems = "shopping_entry_items"
+    /// Server-maintained from shopping status changes; the client only updates `resolved_at`.
+    case frozenItems = "frozen_items"
 
     /// Columns owned by the server: ignored in mutations (`household_id` only counts on insert, so it is sent).
     static let serverOwnedColumns: Set<String> = [
@@ -69,7 +71,7 @@ enum SyncedTable: String, CaseIterable, Sendable, Codable {
         case .shoppingEntries:
             [(.shoppingEntryItems, "entry_id")]
         case .productStores, .recipeIngredients, .recipeComponents, .mealPlanEntries, .consumptions,
-            .shoppingEntryItems:
+            .shoppingEntryItems, .frozenItems:
             []
         }
     }

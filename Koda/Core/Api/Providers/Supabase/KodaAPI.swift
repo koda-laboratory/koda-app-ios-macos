@@ -11,6 +11,21 @@ enum KodaAPI {
         SupabaseRequest(path: "\(basePath)/me", errorHandling: .local, headerProvider: headerProvider)
     }
 
+    /// `PATCH /households/:id/settings` → the household as `/me` lists it.
+    static func updateHouseholdSettings(
+        householdID: String,
+        _ body: HouseholdSettingsRequestDTO,
+        headerProvider: any HTTPHeaderProvider
+    ) -> SupabaseRequest<MeHouseholdDTO> {
+        SupabaseRequest(
+            path: "\(basePath)/households/\(householdID)/settings",
+            method: .patch,
+            body: body,
+            errorHandling: .local,
+            headerProvider: headerProvider
+        )
+    }
+
     /// `POST /sync/push` (at most 500 mutations; the app sends batches of 100).
     static func syncPush(
         _ body: SyncPushRequestDTO,

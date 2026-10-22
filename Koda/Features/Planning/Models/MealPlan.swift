@@ -13,11 +13,23 @@ struct MealPlanEntry: Sendable, Equatable, Identifiable {
     let position: Int
     /// Set while the entry belongs to a pending draft.
     let draftID: UUID?
-    /// The consumption logged for this entry ("Marcar como comido").
+    /// The consumption logged for this entry (automatic at the meal time, or manual).
     let consumptionID: UUID?
+    /// Own time of this meal ("hoy cenamos a las 20:00"); `nil` uses the household slot time.
+    var scheduledTime: LocalTime?
+    /// Set by "No lo comimos": the meal does not count and is not auto-logged again.
+    var skippedAt: Date?
 
     var title: String { recipeName ?? freeText ?? "" }
     var isConsumed: Bool { consumptionID != nil }
+    var isSkipped: Bool { skippedAt != nil }
+    /// Free-text entries ("Comemos fuera") never become consumptions.
+    var isRecipe: Bool { recipeID != nil }
+
+    /// The effective time of the meal.
+    func time(using slotTimes: SlotTimes) -> LocalTime {
+        scheduledTime ?? slotTimes[slot]
+    }
 }
 
 struct DayPlan: Sendable, Equatable, Identifiable {
@@ -79,6 +91,25 @@ struct NewMealPlanEntry: Sendable, Equatable {
     var freeText: String?
     var servings: Double?
     var note: String?
+    var scheduledTime: LocalTime?
+}
+
+/// Changes to an existing planned meal (move, swap the recipe, change the time).
+struct MealPlanEntryUpdate: Sendable, Equatable {
+    var day: LocalDay
+    var slot: MealSlot
+    var recipeID: UUID?
+    var freeText: String?
+    var servings: Double?
+    var scheduledTime: LocalTime?
+}
+
+/// Who logged a consumption (`consumptions.source`).
+enum ConsumptionSource: String, Sendable, Codable {
+    case auto
+    case manual
+    case siri
+    case mcp
 }
 
 struct Consumption: Sendable, Equatable, Identifiable {
@@ -96,6 +127,7 @@ struct NewConsumption: Sendable, Equatable {
     var slot: MealSlot?
     var servings: Double?
     var mealPlanEntryID: UUID?
+    var source: ConsumptionSource = .manual
 }
 
 extension MealPlanEntry {
@@ -105,5 +137,13 @@ extension MealPlanEntry {
             if lhs.slot != rhs.slot { return lhs.slot < rhs.slot }
             return lhs.position < rhs.position
         }
+    }
+}
+
+extension MealPlanEntry {
+    /// Eaten (or considered eaten): a recipe meal not skipped whose time has passed or that has a consumption.
+    func isEaten(now: Date, slotTimes: SlotTimes, timeZone: TimeZone) -> Bool {
+        guard isRecipe, !isSkipped else { return false }
+        return isConsumed || time(using: slotTimes).date(on: day, in: timeZone) <= now
     }
 }

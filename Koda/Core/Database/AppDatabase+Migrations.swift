@@ -8,6 +8,7 @@ extension AppDatabase {
         var migrator = DatabaseMigrator()
         migrator.registerMigration("v1_synced_tables", migrate: SchemaV1.syncedTables)
         migrator.registerMigration("v1_sync_bookkeeping", migrate: SchemaV1.syncBookkeeping)
+        migrator.registerMigration("v2_meals_shopping_status_frozen", migrate: SchemaV2.migrate)
         return migrator
     }
 }
@@ -212,5 +213,52 @@ private enum SchemaV1 {
         table.column("deleted_at", .text)
         table.column("client_updated_at", .text)
         table.column("server_seq", .integer)
+    }
+}
+
+/// Third product revision (PLAN.md 3.6, backend migrations `…07`–`…10`): household settings in the cached `/me`,
+/// meal times and skipped meals, consumption sources, the three-state shopping list and `frozen_items`.
+private enum SchemaV2 {
+    static func migrate(_ db: Database) throws {
+        // Cached `/me`: `slot_times` as JSON text, `shopping_weekday` 1…7 (ISO, Monday = 1).
+        try db.alter(table: "me_households") { table in
+            table.add(column: "slot_times", .text)
+            table.add(column: "shopping_weekday", .integer)
+        }
+
+        try db.alter(table: "meal_plan_entries") { table in
+            table.add(column: "scheduled_time", .text)
+            table.add(column: "skipped_at", .text)
+        }
+
+        try db.alter(table: "consumptions") { table in
+            table.add(column: "source", .text).notNull().defaults(to: "manual")
+        }
+
+        for tableName in ["shopping_entries", "shopping_entry_items"] {
+            try db.alter(table: tableName) { table in
+                table.add(column: "status", .text).notNull().defaults(to: "pending")
+            }
+            try db.execute(sql: "UPDATE \(tableName) SET status = 'have' WHERE checked = 1")
+        }
+
+        try db.create(table: "frozen_items") { table in
+            table.primaryKey("id", .text)
+            table.column("household_id", .text).notNull()
+            table.column("product_id", .text).notNull().indexed()
+            table.column("shopping_entry_id", .text).indexed()
+            table.column("shopping_entry_item_id", .text).indexed()
+            table.column("meal_plan_entry_id", .text).indexed()
+            table.column("frozen_at", .text)
+            table.column("defrost_remind_at", .text)
+            table.column("reminded_at", .text)
+            table.column("resolved_at", .text)
+            table.column("created_at", .text)
+            table.column("updated_at", .text)
+            table.column("updated_by", .text)
+            table.column("deleted_at", .text)
+            table.column("client_updated_at", .text)
+            table.column("server_seq", .integer)
+        }
     }
 }

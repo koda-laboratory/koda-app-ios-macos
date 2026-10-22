@@ -160,6 +160,66 @@ struct MeHouseholdDTO: Decodable, Sendable, Equatable {
     let timezone: String
     let role: String
     let members: [MeMemberDTO]
+    /// Third revision; `nil` until the backend sends it.
+    let slotTimes: [String: String]?
+    /// ISO weekday 1…7; `nil` until the backend sends it.
+    let shoppingWeekday: Int?
+
+    private enum CodingKeys: String, CodingKey {
+        case id
+        case name
+        case timezone
+        case role
+        case members
+        case slotTimes = "slot_times"
+        case shoppingWeekday = "shopping_weekday"
+    }
+
+    init(
+        id: String,
+        name: String,
+        timezone: String,
+        role: String,
+        members: [MeMemberDTO],
+        slotTimes: [String: String]? = nil,
+        shoppingWeekday: Int? = nil
+    ) {
+        self.id = id
+        self.name = name
+        self.timezone = timezone
+        self.role = role
+        self.members = members
+        self.slotTimes = slotTimes
+        self.shoppingWeekday = shoppingWeekday
+    }
+
+    init(from decoder: any Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        id = try container.decode(String.self, forKey: .id)
+        name = try container.decode(String.self, forKey: .name)
+        timezone = try container.decodeIfPresent(String.self, forKey: .timezone) ?? "Europe/Madrid"
+        role = try container.decodeIfPresent(String.self, forKey: .role) ?? "member"
+        members = try container.decodeIfPresent([MeMemberDTO].self, forKey: .members) ?? []
+        slotTimes = try? container.decodeIfPresent([String: String].self, forKey: .slotTimes)
+        shoppingWeekday = try? container.decodeIfPresent(Int.self, forKey: .shoppingWeekday)
+    }
+}
+
+/// `PATCH /households/:id/settings`. Omitted fields keep their value.
+struct HouseholdSettingsRequestDTO: Encodable, Sendable, Equatable {
+    let slotTimes: [String: String]?
+    let shoppingWeekday: Int?
+
+    private enum CodingKeys: String, CodingKey {
+        case slotTimes = "slot_times"
+        case shoppingWeekday = "shopping_weekday"
+    }
+
+    func encode(to encoder: any Encoder) throws {
+        var container = encoder.container(keyedBy: CodingKeys.self)
+        try container.encodeIfPresent(slotTimes, forKey: .slotTimes)
+        try container.encodeIfPresent(shoppingWeekday, forKey: .shoppingWeekday)
+    }
 }
 
 struct MeResponseDTO: Decodable, Sendable, Equatable {

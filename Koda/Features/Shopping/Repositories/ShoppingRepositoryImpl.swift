@@ -20,6 +20,40 @@ final class ShoppingRepositoryImpl: ShoppingRepository, Sendable {
         database.observe { db in try Self.fetchEntries(in: db) }
     }
 
+    func observeFrozenItems() -> AsyncStream<[FrozenItem]> {
+        database.observe { db in
+            try Row.fetchAll(
+                db,
+                sql: """
+                    SELECT f.id, f.product_id, f.shopping_entry_id, f.shopping_entry_item_id, f.frozen_at,
+                           f.defrost_remind_at, p.name AS product_name,
+                           e.id AS entry_id, e.date AS entry_date, e.slot AS entry_slot,
+                           e.scheduled_time AS entry_time, r.id AS recipe_id, r.name AS recipe_name
+                    FROM frozen_items f
+                    LEFT JOIN products p ON p.id = f.product_id
+                    LEFT JOIN meal_plan_entries e ON e.id = f.meal_plan_entry_id AND e.deleted_at IS NULL
+                    LEFT JOIN recipes r ON r.id = e.recipe_id AND r.deleted_at IS NULL
+                    WHERE f.deleted_at IS NULL AND f.resolved_at IS NULL
+                    ORDER BY f.defrost_remind_at IS NULL, f.defrost_remind_at, p.name COLLATE NOCASE
+                    """
+            )
+            .compactMap(FrozenItem.init(row:))
+        }
+    }
+
+    func mealPlanEntryIDsOnList() async throws(KodaError) -> Set<UUID> {
+        try await database.read { db in
+            let ids = try String.fetchAll(
+                db,
+                sql: """
+                    SELECT DISTINCT meal_plan_entry_id FROM shopping_entries
+                    WHERE deleted_at IS NULL AND meal_plan_entry_id IS NOT NULL
+                    """
+            )
+            return Set(ids.compactMap(UUID.init(uuidString:)))
+        }
+    }
+
     // MARK: - Mutations
 
     @discardableResult
@@ -46,6 +80,15 @@ final class ShoppingRepositoryImpl: ShoppingRepository, Sendable {
     func addRecipeEntry(_ input: NewRecipeShoppingEntry) async throws(KodaError) -> ShoppingEntry {
         let writer = writer
         return try await database.write { db in
+            if let mealPlanEntryID = input.mealPlanEntryID?.lowercasedString,
+                let existingID = try String.fetchOne(
+                    db,
+                    sql: "SELECT id FROM shopping_entries WHERE deleted_at IS NULL AND meal_plan_entry_id = ? LIMIT 1",
+                    arguments: [mealPlanEntryID]
+                )
+            {
+                return try Self.fetchEntry(id: existingID, in: db)
+            }
             var record = ShoppingEntryRecord.new(kind: .recipe, position: try Self.nextPosition(in: db))
             record.recipeId = input.recipeID.lowercasedString
             record.text = input.label
@@ -82,33 +125,66 @@ final class ShoppingRepositoryImpl: ShoppingRepository, Sendable {
     }
 
     func setEntryChecked(id: UUID, isChecked: Bool) async throws(KodaError) {
+        try await setEntryStatus(id: id, status: isChecked ? .have : .pending)
+    }
+
+    func setItemChecked(id: UUID, isChecked: Bool) async throws(KodaError) {
+        try await setItemStatus(id: id, status: isChecked ? .have : .pending)
+    }
+
+    func setEntryStatus(id: UUID, status: ShoppingItemStatus) async throws(KodaError) {
         let writer = writer
         try await database.write { db in
             var record = try Self.liveEntry(id: id.lowercasedString, in: db)
-            if record.checked != isChecked {
-                record.checked = isChecked
+            if record.status != status.rawValue {
+                record.status = status.rawValue
                 try writer.save(record, in: db)
             }
             guard record.kind == ShoppingEntryKind.recipe.rawValue else { return }
             let items = try ShoppingEntryItemRecord.live()
-                .filter(Column("entry_id") == record.id && Column("checked") == !isChecked)
+                .filter(Column("entry_id") == record.id && Column("status") != status.rawValue)
                 .fetchAll(db)
             for var item in items {
-                item.checked = isChecked
+                item.status = status.rawValue
                 try writer.save(item, in: db)
             }
         }
     }
 
-    func setItemChecked(id: UUID, isChecked: Bool) async throws(KodaError) {
+    func setItemStatus(id: UUID, status: ShoppingItemStatus) async throws(KodaError) {
         let writer = writer
         try await database.write { db in
             guard var item = try ShoppingEntryItemRecord.live().filter(key: id.lowercasedString).fetchOne(db) else {
                 throw KodaError(type: .notFound, reason: "Shopping item \(id) not found.")
             }
-            guard item.checked != isChecked else { return }
-            item.checked = isChecked
+            guard item.status != status.rawValue else { return }
+            item.status = status.rawValue
             try writer.save(item, in: db)
+
+            // The recipe entry is "have" once every product is; any other combination keeps it pending.
+            var entry = try Self.liveEntry(id: item.entryId, in: db)
+            let remaining =
+                try ShoppingEntryItemRecord.live()
+                .filter(Column("entry_id") == entry.id && Column("status") != ShoppingItemStatus.have.rawValue)
+                .fetchCount(db)
+            let entryStatus = remaining == 0 ? ShoppingItemStatus.have : .pending
+            if entry.status != entryStatus.rawValue {
+                entry.status = entryStatus.rawValue
+                try writer.save(entry, in: db)
+            }
+        }
+    }
+
+    func resolveFrozenItem(id: UUID, at date: Date) async throws(KodaError) {
+        let writer = writer
+        let timestamp = ISO8601Timestamp.string(from: date)
+        try await database.write { db in
+            guard var record = try FrozenItemRecord.live().filter(key: id.lowercasedString).fetchOne(db) else {
+                throw KodaError(type: .notFound, reason: "Frozen item \(id) not found.")
+            }
+            guard record.resolvedAt == nil else { return }
+            record.resolvedAt = timestamp
+            try writer.save(record, in: db)
         }
     }
 
@@ -134,7 +210,7 @@ final class ShoppingRepositoryImpl: ShoppingRepository, Sendable {
         return try await database.write { db in
             let ids = try String.fetchAll(
                 db,
-                sql: "SELECT id FROM shopping_entries WHERE deleted_at IS NULL AND checked = 1"
+                sql: "SELECT id FROM shopping_entries WHERE deleted_at IS NULL AND status = 'have'"
             )
             for id in ids {
                 try writer.delete(.shoppingEntries, id: id, in: db)
@@ -167,14 +243,25 @@ final class ShoppingRepositoryImpl: ShoppingRepository, Sendable {
         return entry
     }
 
+    /// `store_names`: the stores of a product, `|`-separated, by name.
+    private static func storeNamesSQL(_ productColumn: String) -> String {
+        """
+        (SELECT GROUP_CONCAT(name, '|') FROM (
+            SELECT st.name AS name FROM product_stores ps
+            JOIN stores st ON st.id = ps.store_id AND st.deleted_at IS NULL
+            WHERE ps.product_id = \(productColumn) AND ps.deleted_at IS NULL
+            ORDER BY st.name COLLATE NOCASE)) AS store_names
+        """
+    }
+
     private static func fetchEntries(in db: Database, onlyID: String? = nil) throws -> [ShoppingEntry] {
         let filter = onlyID == nil ? "" : " AND s.id = ?"
         let arguments: StatementArguments = onlyID.map { [$0] } ?? []
         let entryRows = try Row.fetchAll(
             db,
             sql: """
-                SELECT s.id, s.kind, s.product_id, s.recipe_id, s.text, s.quantity, s.unit, s.checked, s.source,
-                       s.position, s.meal_plan_entry_id,
+                SELECT s.id, s.kind, s.product_id, s.recipe_id, s.text, s.quantity, s.unit, s.status, s.source,
+                       s.position, s.meal_plan_entry_id, \(storeNamesSQL("s.product_id")),
                        p.name AS product_name, p.emoji AS product_emoji, p.category AS product_category,
                        r.name AS recipe_name, r.emoji AS recipe_emoji
                 FROM shopping_entries s
@@ -189,7 +276,7 @@ final class ShoppingRepositoryImpl: ShoppingRepository, Sendable {
         let itemRows = try Row.fetchAll(
             db,
             sql: """
-                SELECT i.id, i.entry_id, i.product_id, i.quantity, i.unit, i.checked,
+                SELECT i.id, i.entry_id, i.product_id, i.quantity, i.unit, i.status, \(storeNamesSQL("i.product_id")),
                        p.name AS product_name, p.emoji AS product_emoji, p.category AS product_category
                 FROM shopping_entry_items i
                 LEFT JOIN products p ON p.id = i.product_id
@@ -234,11 +321,12 @@ extension ShoppingEntry {
             category: (row["product_category"] as String?).flatMap(ProductCategory.init(rawValue:)),
             quantity: row["quantity"],
             unit: row["unit"],
-            isChecked: row["checked"],
+            status: ShoppingItemStatus(rawValue: row["status"]) ?? .pending,
             source: ShoppingEntrySource(rawValue: row["source"]) ?? .manual,
             position: row["position"],
             mealPlanEntryID: (row["meal_plan_entry_id"] as String?).flatMap(UUID.init(uuidString:)),
-            items: items
+            items: items,
+            storeNames: splitStoreNames(row["store_names"])
         )
     }
 }
@@ -256,7 +344,44 @@ extension ShoppingEntryItem {
             category: (row["product_category"] as String?).flatMap(ProductCategory.init(rawValue:)),
             quantity: row["quantity"],
             unit: row["unit"],
-            isChecked: row["checked"]
+            status: ShoppingItemStatus(rawValue: row["status"]) ?? .pending,
+            storeNames: splitStoreNames(row["store_names"])
+        )
+    }
+}
+
+private func splitStoreNames(_ value: String?) -> [String] {
+    value?.split(separator: "|").map(String.init) ?? []
+}
+
+extension FrozenItem {
+    init?(row: Row) {
+        guard let id = UUID(uuidString: row["id"]), let productID = UUID(uuidString: row["product_id"]) else {
+            return nil
+        }
+        var meal: Meal?
+        if let entryID = (row["entry_id"] as String?).flatMap(UUID.init(uuidString:)),
+            let day = (row["entry_date"] as String?).flatMap({ LocalDay($0) }),
+            let slot = (row["entry_slot"] as String?).flatMap(MealSlot.init(rawValue:))
+        {
+            meal = Meal(
+                entryID: entryID,
+                day: day,
+                slot: slot,
+                recipeID: (row["recipe_id"] as String?).flatMap(UUID.init(uuidString:)),
+                recipeName: row["recipe_name"],
+                scheduledTime: (row["entry_time"] as String?).flatMap { LocalTime($0) }
+            )
+        }
+        self.init(
+            id: id,
+            productID: productID,
+            productName: row["product_name"] ?? "",
+            shoppingEntryID: (row["shopping_entry_id"] as String?).flatMap(UUID.init(uuidString:)),
+            shoppingEntryItemID: (row["shopping_entry_item_id"] as String?).flatMap(UUID.init(uuidString:)),
+            meal: meal,
+            frozenAt: ISO8601Timestamp.date(from: row["frozen_at"]),
+            defrostRemindAt: ISO8601Timestamp.date(from: row["defrost_remind_at"])
         )
     }
 }

@@ -36,7 +36,7 @@ enum SyncRowCodec {
     /// Mutation `fields` for a stored row: every client-writable column (`household_id` included, since the server
     /// only uses it on insert).
     ///
-    /// For the shopping tables, the `checked` group is only sent once `checked_at` exists; otherwise the server
+    /// For the shopping tables, the `status`/`checked` group is only sent once `checked_at` exists; otherwise the server
     /// would default its timestamp to `client_ts` and could undo a newer check from another device.
     static func mutationFields(
         from dictionary: [String: DatabaseValue],
@@ -51,6 +51,7 @@ enum SyncRowCodec {
         if table.usesFieldLevelConflicts, fields["checked_at"] == nil || fields["checked_at"] == .null {
             fields.removeValue(forKey: "checked")
             fields.removeValue(forKey: "checked_at")
+            fields.removeValue(forKey: "status")
         }
         return fields
     }

@@ -56,12 +56,17 @@ struct MeProfileRecord: Codable, Sendable, Equatable, FetchableRecord, Persistab
 
 struct MeHouseholdRecord: Codable, Sendable, Equatable, FetchableRecord, PersistableRecord {
     static let databaseTableName = "me_households"
+    static var databaseColumnDecodingStrategy: DatabaseColumnDecodingStrategy { .convertFromSnakeCase }
+    static var databaseColumnEncodingStrategy: DatabaseColumnEncodingStrategy { .convertToSnakeCase }
 
     var id: String
     var name: String
     var timezone: String
     var role: String
     var position: Int
+    /// JSON object `{"breakfast":"HH:MM",…}`; `nil` until the backend sends it.
+    var slotTimes: String?
+    var shoppingWeekday: Int?
 }
 
 struct MeMemberRecord: Codable, Sendable, Equatable, FetchableRecord, PersistableRecord {
