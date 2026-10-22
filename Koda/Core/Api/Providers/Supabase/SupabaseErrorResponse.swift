@@ -2,7 +2,7 @@
 /// - GoTrue: `{ "code": 400, "error_code": "invalid_credentials", "msg": "…" }`
 /// - GoTrue OAuth-style: `{ "error": "invalid_grant", "error_description": "…" }`
 /// - PostgREST: `{ "code": "PGRST301", "message": "…", "details": …, "hint": … }`
-/// - Edge Functions: `{ "error": "…", "message": "…" }` (contract owned by `koda-backend`)
+/// - Edge Function `api`: `{ "error": { "code": "not_found", "message": "…", "details"?: … } }`
 struct SupabaseErrorResponse: Decodable, Sendable, Equatable {
     let code: String?
     let message: String?
@@ -21,8 +21,19 @@ struct SupabaseErrorResponse: Decodable, Sendable, Equatable {
         self.message = message
     }
 
+    private struct NestedError: Decodable {
+        let code: String?
+        let message: String?
+    }
+
     init(from decoder: any Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
+
+        if let nested = try? container.decodeIfPresent(NestedError.self, forKey: .error) {
+            self.code = nested.code
+            self.message = nested.message
+            return
+        }
 
         let errorCode = try? container.decodeIfPresent(String.self, forKey: .errorCode)
         // `code` is the HTTP status (Int) in GoTrue and a string code in PostgREST.
