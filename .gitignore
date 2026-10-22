@@ -1,0 +1,58 @@
+# macOS
+.DS_Store
+
+# Editors and IDE
+.*.swp
+.*.swo
+.idea/
+xcuserdata/
+*.xcscmblueprint
+*.xccheckout
+*.moved-aside
+
+# Xcode build output and local state
+.build/
+build/
+DerivedData/
+.build-benchmark/
+xcodebuild*.log
+default.profraw
+*.hmap
+*.xcresult
+
+# Xcode workspace inside the project: only the SwiftPM lockfile is shared.
+*.xcodeproj/project.xcworkspace/*
+!*.xcodeproj/project.xcworkspace/xcshareddata/
+*.xcodeproj/project.xcworkspace/xcshareddata/*
+!*.xcodeproj/project.xcworkspace/xcshareddata/swiftpm/
+*.xcodeproj/project.xcworkspace/xcshareddata/swiftpm/*
+!*.xcodeproj/project.xcworkspace/xcshareddata/swiftpm/Package.resolved
+
+# Swift Package Manager checkouts
+.swiftpm/
+Packages/
+
+# Local configuration and secrets
+**/*.private.xcconfig
+*.mobileprovision
+*.provisionprofile
+*.cer
+*.p12
+*.p8
+*.p12.password
+
+# App packaging
+*.ipa
+*.pkg
+*.dSYM.zip
+*.dSYM
+
+# Fastlane
+fastlane/.env
+fastlane/apikey.json
+fastlane/report.xml
+fastlane/Preview.html
+fastlane/test_output/
+
+# UI automation output
+screenshots/

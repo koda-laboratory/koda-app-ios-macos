@@ -1,0 +1,31 @@
+#!/usr/bin/env bash
+
+set -o pipefail
+
+REPOSITORY_ROOT=$(git rev-parse --show-toplevel)
+FORMAT_CONFIGURATION="$REPOSITORY_ROOT/.swift-format"
+FAILED=0
+
+if ! swift format --version >/dev/null 2>&1; then
+    echo "error: swift-format is unavailable in the active Swift toolchain." >&2
+    exit 1
+fi
+
+while IFS= read -r -d '' FILE; do
+    if ! git -C "$REPOSITORY_ROOT" show ":$FILE" \
+        | swift format lint \
+            --strict \
+            --configuration "$FORMAT_CONFIGURATION" \
+            --assume-filename "$FILE" \
+            -; then
+        FAILED=1
+    fi
+done < <(git -C "$REPOSITORY_ROOT" diff --cached --name-only --diff-filter=ACMR -z -- '*.swift')
+
+if [[ "$FAILED" -ne 0 ]]; then
+    echo >&2
+    echo "error: staged Swift files are not correctly formatted." >&2
+    echo "Run the following command, then stage the formatted files again:" >&2
+    echo "  swift format format --in-place --recursive --configuration .swift-format Koda KodaWidgets KodaTests" >&2
+    exit 1
+fi

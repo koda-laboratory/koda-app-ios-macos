@@ -1,0 +1,14 @@
+{
+  "indentation" : {
+    "spaces" : 4
+  },
+  "lineBreakBeforeEachArgument" : true,
+  "lineLength" : 120,
+  "respectsExistingLineBreaks" : true,
+  "rules" : {
+    "AlwaysUseLowerCamelCase" : false,
+    "NoBlockComments" : false
+  },
+  "tabWidth" : 4,
+  "version" : 1
+}
