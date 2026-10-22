@@ -1,0 +1,79 @@
+import SwiftUI
+
+// MARK: - Colors
+
+/// Koda palette (PLAN section 10). Three brand colors and colors derived from them; no others.
+///
+/// Brand constants are fixed. Semantic colors adapt to light and dark mode through the asset catalog
+/// (`Resources/Assets.xcassets/Colors`), so views use the semantic ones.
+enum KodaColor {
+    // MARK: Brand
+
+    /// `#0D0D0D`: main background in dark mode and primary text in light mode.
+    static let onyx = Color(hex: 0x0D0D0D)
+    /// `#592816`: brand color. Primary button, selected tab, highlighted surfaces and headers.
+    static let walnut = Color(hex: 0x592816)
+    /// `#CCA097`: accent. Chips, selection, checks, highlights and text on walnut.
+    static let taupe = Color(hex: 0xCCA097)
+
+    // MARK: Derived
+
+    /// `#F6EEEB`: rosy cream, the light-mode background.
+    static let cream = Color(hex: 0xF6EEEB)
+    /// `#7A3A22`: lighter walnut for pressed and hover states.
+    static let walnutLight = Color(hex: 0x7A3A22)
+    /// `#2A140C`: very dark walnut, the elevated surface in dark mode.
+    static let walnutDeep = Color(hex: 0x2A140C)
+    /// Taupe at 20 %: chip fills and separators.
+    static let taupeSoft = Color(hex: 0xCCA097, opacity: 0.2)
+
+    // MARK: Semantic (adaptive)
+
+    static let background = Color("KodaBackground")
+    static let surface = Color("KodaSurface")
+    static let surfaceElevated = Color("KodaSurfaceElevated")
+    static let textPrimary = Color("KodaTextPrimary")
+    static let textSecondary = Color("KodaTextSecondary")
+    static let brand = Color("KodaBrand")
+    static let onBrand = Color("KodaOnBrand")
+    static let accent = Color("KodaAccent")
+    static let separator = Color("KodaSeparator")
+    /// `#B4533A`, desaturated so it does not break the palette.
+    static let error = Color("KodaError")
+    /// `#6E8B5E`, desaturated so it does not break the palette.
+    static let success = Color("KodaSuccess")
+}
+
+// MARK: - Gradient
+
+enum KodaGradient {
+    /// Signature gradient: onyx at the top to walnut at the bottom. Today hero and login.
+    static let signature = LinearGradient(
+        colors: [KodaColor.onyx, KodaColor.walnut],
+        startPoint: .top,
+        endPoint: .bottom
+    )
+}
+
+// MARK: - Previews
+
+#if DEBUG
+    #Preview("Palette") {
+        let swatches: [(String, Color)] = [
+            ("onyx", KodaColor.onyx), ("walnut", KodaColor.walnut), ("taupe", KodaColor.taupe),
+            ("cream", KodaColor.cream), ("walnutLight", KodaColor.walnutLight),
+            ("walnutDeep", KodaColor.walnutDeep), ("error", KodaColor.error), ("success", KodaColor.success),
+        ]
+        VStack(spacing: KodaSpacing.xs) {
+            ForEach(swatches, id: \.0) { name, color in
+                HStack {
+                    RoundedRectangle(cornerRadius: KodaRadius.small).fill(color).frame(width: 44, height: 44)
+                    Text(verbatim: name).font(KodaTypography.body)
+                    Spacer()
+                }
+            }
+        }
+        .padding()
+        .kodaPreview()
+    }
+#endif
