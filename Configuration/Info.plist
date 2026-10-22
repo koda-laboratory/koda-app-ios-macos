@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>APP_GROUP</key>
+	<string>$(APP_GROUP)</string>
+	<key>BACKGROUND_SYNC_TASK_IDENTIFIER</key>
+	<string>$(BACKGROUND_SYNC_TASK_IDENTIFIER)</string>
+	<key>BGTaskSchedulerPermittedIdentifiers</key>
+	<array>
+		<string>$(BACKGROUND_SYNC_TASK_IDENTIFIER)</string>
+	</array>
+	<key>HTTP_LOGGING_ENABLED</key>
+	<string>$(HTTP_LOGGING_ENABLED)</string>
+	<key>ITSAppUsesNonExemptEncryption</key>
+	<false/>
+	<key>KEYCHAIN_ACCESS_GROUP</key>
+	<string>$(KEYCHAIN_ACCESS_GROUP)</string>
+	<key>NSFaceIDUsageDescription</key>
+	<string>Koda usa Face ID para desbloquear la app y proteger los datos de tu hogar.</string>
+	<key>SUPABASE_PUBLISHABLE_KEY</key>
+	<string>$(SUPABASE_PUBLISHABLE_KEY)</string>
+	<key>SUPABASE_URL</key>
+	<string>$(SUPABASE_URL)</string>
+	<key>UIBackgroundModes</key>
+	<array>
+		<string>fetch</string>
+		<string>remote-notification</string>
+	</array>
+</dict>
+</plist>

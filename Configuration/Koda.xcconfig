@@ -1,0 +1,43 @@
+// Koda has ONE environment: a single Supabase project (`koda`) and a single scheme (`Koda`).
+// Debug and Release are the only build configurations. Never add Local/Dev/Pro variants.
+// Public values only. Secrets live in the ignored Koda.private.xcconfig (see the .example file).
+
+#include "version.xcconfig"
+
+// Identifiers
+KODA_BUNDLE_IDENTIFIER = com.kodalabs.app
+KODA_WIDGETS_BUNDLE_IDENTIFIER = $(KODA_BUNDLE_IDENTIFIER).widgets
+APP_GROUP = group.com.kodalabs.app
+KEYCHAIN_ACCESS_GROUP = $(DEVELOPMENT_TEAM).$(KODA_BUNDLE_IDENTIFIER)
+BACKGROUND_SYNC_TASK_IDENTIFIER = $(KODA_BUNDLE_IDENTIFIER).sync
+
+// Team and signing. Profiles are managed by fastlane match (fastlane/Matchfile).
+DEVELOPMENT_TEAM = MUDCX7X324
+CODE_SIGN_STYLE = Manual
+KODA_PROFILE_KIND = Development
+KODA_PROFILE_KIND[config=Release] = AppStore
+KODA_PROFILE_SUFFIX[sdk=macosx*] = $() macos
+CODE_SIGN_IDENTITY = Apple Development
+CODE_SIGN_IDENTITY[config=Release] = Apple Distribution
+
+// Platforms: iPhone + native Mac (SwiftUI, not Catalyst, not "Designed for iPad").
+SDKROOT = auto
+SUPPORTED_PLATFORMS = iphoneos iphonesimulator macosx
+SUPPORTS_MACCATALYST = NO
+SUPPORTS_MAC_DESIGNED_FOR_IPHONE_IPAD = NO
+SUPPORTS_XR_DESIGNED_FOR_IPHONE_IPAD = NO
+TARGETED_DEVICE_FAMILY = 1
+IPHONEOS_DEPLOYMENT_TARGET = 26.5
+MACOSX_DEPLOYMENT_TARGET = 26.5
+SWIFT_VERSION = 6
+
+// Supabase (single project `koda`). $() prevents xcconfig from reading // as a comment.
+// TODO: replace <project-ref> with the real project ref once the Supabase project exists (PLAN section 14).
+SUPABASE_URL = https:/$()/<project-ref>.supabase.co
+// Overridden in Koda.private.xcconfig with the sb_publishable_… key. Never use secret keys in the app.
+SUPABASE_PUBLISHABLE_KEY =
+HTTP_LOGGING_ENABLED = NO
+HTTP_LOGGING_ENABLED[config=Debug] = YES
+
+// Optional local-only secrets and overrides. Never commit this file.
+#include? "Koda.private.xcconfig"
