@@ -35,6 +35,8 @@ private actor StubUnlockUseCase: UnlockAppUseCase {
         count += 1
         return result
     }
+
+    func biometry() -> BiometryKind { .faceID }
 }
 
 private let context = HouseholdContext(
@@ -102,6 +104,19 @@ struct AuthViewModelTests {
         continuation.yield(.locked)
         #expect(await waitUntil { await unlock.count == 1 })
         #expect(await eventually { viewModel.state == .unlocked })
+    }
+
+    @Test("The returning-user screen learns which biometrics the device offers")
+    func lockBiometry() async {
+        let (stream, continuation) = AsyncStream<AppLockState>.makeStream()
+        let viewModel = LockViewModel(
+            observeLock: StreamLockUseCase(stream: stream),
+            unlockApp: StubUnlockUseCase(result: .locked),
+            unlockReason: "Test"
+        )
+        await viewModel.send(.appeared)
+        continuation.yield(.locked)
+        #expect(await eventually { viewModel.biometry == .faceID })
     }
 
     @Test("A failed authentication keeps the lock and the button retries")

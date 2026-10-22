@@ -70,12 +70,14 @@ final class AppLifecycleCoordinator {
     func applicationDidFinishLaunching() async {
         observeForcedLogin()
         KodaNotification.registerCategories()
-        await lockService.applicationDidLaunch()
 
         guard let session = await restoreSession.execute() else {
+            await lockService.reset()
             sessionState = .signedOut
             return
         }
+        // A returning user signs in with Face ID / Touch ID (the login screen with biometrics), never twice.
+        await lockService.applicationDidLaunch()
         sessionState = .signedIn(userID: session.userId)
         await startSignedInServices(trigger: .launch)
 
@@ -86,12 +88,13 @@ final class AppLifecycleCoordinator {
     // MARK: - Scene phase
 
     func sceneDidBecomeActive() async {
-        await lockService.applicationWillEnterForeground()
         guard case .signedIn = sessionState else { return }
+        await lockService.applicationWillEnterForeground()
         await syncScheduler.requestSync(.foreground)
     }
 
     func sceneDidEnterBackground() async {
+        guard case .signedIn = sessionState else { return }
         await lockService.applicationDidEnterBackground()
     }
 
@@ -105,6 +108,8 @@ final class AppLifecycleCoordinator {
 
     /// The login screen completed `LoginUseCase`: enter the app and start sync and push registration.
     func didSignIn(userID: String) async {
+        // The password already proved who this is: no biometric step on top of it.
+        await lockService.markUnlocked()
         router.popToRoot(in: router.selectedTab)
         router.selectedTab = .today
         sessionState = .signedIn(userID: userID)

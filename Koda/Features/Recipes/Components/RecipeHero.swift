@@ -28,7 +28,7 @@ struct RecipeHero: View {
 
     private var tags: [String] {
         var tags = recipe.mealTypes.map { String(localized: $0.titleResource) }
-        if let minutes = recipe.timeMinutes {
+        if let minutes = recipe.displayMinutes {
             tags.append(String(localized: "recipe.minutes \(minutes)"))
         }
         tags += recipe.nutrients.map { String(localized: $0.titleResource) }

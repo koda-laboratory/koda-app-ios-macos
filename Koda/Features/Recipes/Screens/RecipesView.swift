@@ -106,7 +106,7 @@ struct RecipesView: View {
     }
 
     private func detail(_ item: RecipeCatalogItem) -> String {
-        let minutes = item.recipe.timeMinutes.map { String(localized: "recipe.minutes \($0)") }
+        let minutes = item.recipe.displayMinutes.map { String(localized: "recipe.minutes \($0)") }
         let times = item.stats.timesEaten > 0 ? String(localized: "recipes.times \(item.stats.timesEaten)") : nil
         let slot = minutes == nil ? item.recipe.mealTypes.first.map { String(localized: $0.titleResource) } : nil
         return KodaFormat.joined([minutes ?? slot, times])

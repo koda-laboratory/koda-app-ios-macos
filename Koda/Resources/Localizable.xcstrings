@@ -1055,13 +1055,13 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Unlock Koda"
+            "value": "Sign in to Koda"
           }
         },
         "es": {
           "stringUnit": {
             "state": "needs_review",
-            "value": "Desbloquea Koda"
+            "value": "Entrar en Koda"
           }
         }
       }
@@ -1096,6 +1096,23 @@
           "stringUnit": {
             "state": "needs_review",
             "value": "Desbloquear"
+          }
+        }
+      }
+    },
+    "lock.use-password": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Use password"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Usar contraseña"
           }
         }
       }
@@ -5916,6 +5933,91 @@
           "stringUnit": {
             "state": "needs_review",
             "value": "Marcada como no comida"
+          }
+        }
+      }
+    },
+    "unlock.face-id": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sign in with Face ID"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Entrar con Face ID"
+          }
+        }
+      }
+    },
+    "unlock.optic-id": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sign in with Optic ID"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Entrar con Optic ID"
+          }
+        }
+      }
+    },
+    "unlock.or-password": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "or with your password"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "o con tu contraseña"
+          }
+        }
+      }
+    },
+    "unlock.subtitle": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Welcome back."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hola de nuevo."
+          }
+        }
+      }
+    },
+    "unlock.touch-id": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sign in with Touch ID"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Entrar con Touch ID"
           }
         }
       }

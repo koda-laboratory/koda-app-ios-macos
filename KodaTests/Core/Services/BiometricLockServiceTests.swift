@@ -89,6 +89,23 @@ struct BiometricLockServiceTests {
         #expect(await failing.state() == .locked)
     }
 
+    @Test("A password login never asks for biometrics on top of it")
+    func passwordLoginUnlocks() async {
+        let service = makeService()
+        await service.applicationDidLaunch()
+        #expect(await service.state() == .locked)
+        await service.markUnlocked()
+        #expect(await service.state() == .unlocked)
+    }
+
+    @Test("Without enrolled biometrics the app opens directly, never with the device passcode")
+    func noBiometricsOpensDirectly() async throws {
+        let service = makeService(authenticator: FakeAuthenticator(available: false))
+        #expect(await service.applicationDidLaunch() == .unlocked)
+        #expect(await service.biometry() == .none)
+        #expect(try await service.unlock(reason: "test") == .unlocked)
+    }
+
     @Test("Disabling the policy and logging out unlock immediately")
     func disablingUnlocks() async {
         let service = makeService()

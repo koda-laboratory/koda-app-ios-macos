@@ -1,6 +1,7 @@
 import SwiftUI
 
-/// The biometric lock: blurs the last content and offers "Desbloquear". Transparent while unlocked.
+/// The returning-user sign-in. While locked it shows the login screen with a Face ID / Touch ID button on top
+/// (prompted automatically) and the password form as the fallback; it is transparent while unlocked.
 struct LockOverlay: View {
     @State private var viewModel: LockViewModel
 
@@ -11,10 +12,17 @@ struct LockOverlay: View {
     var body: some View {
         ZStack {
             if viewModel.state != .unlocked {
-                LockScreen(isAuthenticating: viewModel.state == .authenticating) {
-                    Task { await viewModel.send(.unlock) }
-                }
+                LoginView(
+                    viewModel: Assembly.makeLoginViewModel(),
+                    biometricUnlock: BiometricUnlock(
+                        kind: viewModel.biometry,
+                        isAuthenticating: viewModel.state == .authenticating
+                    ) {
+                        Task { await viewModel.send(.unlock) }
+                    }
+                )
                 .transition(.opacity)
+                .accessibilityAddTraits(.isModal)
             }
         }
         .animation(.easeInOut(duration: 0.2), value: viewModel.state)
@@ -22,51 +30,21 @@ struct LockOverlay: View {
     }
 }
 
-private struct LockScreen: View {
-    let isAuthenticating: Bool
-    let unlock: () -> Void
-
-    var body: some View {
-        VStack(spacing: KodaSpacing.l) {
-            Spacer()
-            KodaArcs()
-                .frame(width: 96)
-            Text("lock.title")
-                .font(KodaTypography.title)
-                .foregroundStyle(KodaColor.textPrimary)
-            Text("lock.message")
-                .font(KodaTypography.callout)
-                .foregroundStyle(KodaColor.textSecondary)
-                .multilineTextAlignment(.center)
-            PrimaryButton("lock.unlock", systemImage: "faceid", isLoading: isAuthenticating, action: unlock)
-                .frame(maxWidth: 280)
-                .accessibilityIdentifier("lock-unlock")
-            Spacer()
-        }
-        .padding(KodaSpacing.l)
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .background(.regularMaterial)
-        .background(KodaColor.background.opacity(0.6))
-        .accessibilityElement(children: .contain)
-        .accessibilityAddTraits(.isModal)
-    }
-}
-
 // MARK: - Previews
 
 #if DEBUG
-    #Preview("Lock · iPhone") {
+    #Preview("Returning user · iPhone") {
         LockOverlay(viewModel: AuthPreviewFactory.makeLockViewModel(locked: true))
             .kodaPreview()
     }
 
-    #Preview("Lock · dark") {
+    #Preview("Returning user · dark") {
         LockOverlay(viewModel: AuthPreviewFactory.makeLockViewModel(locked: true))
             .kodaPreview()
             .preferredColorScheme(.dark)
     }
 
-    #Preview("Lock · Mac", traits: .fixedLayout(width: 1000, height: 700)) {
+    #Preview("Returning user · Mac", traits: .fixedLayout(width: 1000, height: 760)) {
         LockOverlay(viewModel: AuthPreviewFactory.makeLockViewModel(locked: true))
             .kodaPreview()
     }

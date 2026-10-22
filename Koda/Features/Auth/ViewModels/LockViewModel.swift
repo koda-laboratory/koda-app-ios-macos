@@ -12,13 +12,16 @@ enum LockIntent: Sendable {
     case unlock
 }
 
-/// Covers the UI while the biometric lock is engaged (the data stays readable for background sync).
+/// The returning-user sign-in: while locked, the login screen is shown with a Face ID / Touch ID button that is
+/// triggered automatically; the password form below stays available as the fallback (the data stays readable for
+/// background sync).
 @MainActor
 @Observable
 final class LockViewModel: MVIViewModel {
     // MARK: - Properties
 
     private(set) var state = LockScreenState.unlocked
+    private(set) var biometry = BiometryKind.none
 
     @ObservationIgnored private let observeLock: any ObserveAppLockUseCase
     @ObservationIgnored private let unlockApp: any UnlockAppUseCase
@@ -53,7 +56,10 @@ final class LockViewModel: MVIViewModel {
     private func startObserving() {
         guard observation == nil else { return }
         let observeLock = observeLock
+        let unlockApp = unlockApp
         observation = Task { [weak self] in
+            let biometry = await unlockApp.biometry()
+            self?.biometry = biometry
             for await lockState in await observeLock.execute() {
                 guard let self else { return }
                 let wasUnlocked = self.state == .unlocked

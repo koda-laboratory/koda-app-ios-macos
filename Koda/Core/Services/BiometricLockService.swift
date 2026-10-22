@@ -1,25 +1,30 @@
 import Foundation
 
-/// Biometric lock of the UI (never of the data: tokens and the database stay readable after first unlock so
-/// background sync, silent pushes and intents keep working).
+/// Biometric sign-in of a returning user (never protects the data: tokens and the database stay readable after
+/// first unlock so background sync, silent pushes and intents keep working).
 ///
-/// Policy: lock on cold start and when returning after more than `backgroundTimeout` (5 min by default) in the
-/// background, if enabled and the device can authenticate the owner.
+/// Policy: a stored session asks for Face ID / Touch ID on cold start and when returning after more than
+/// `backgroundTimeout` (5 min by default), if enabled and the device has enrolled biometrics. A password login
+/// never locks afterwards: it already proved who the person is.
 protocol BiometricLockService: Sendable {
     func state() async -> AppLockState
     func stateUpdates() async -> AsyncStream<AppLockState>
     func policy() async -> BiometricLockPolicy
     func updatePolicy(_ policy: BiometricLockPolicy) async
-    /// Cold start: locks when the policy is enabled.
+    /// Biometrics offered by the device.
+    func biometry() async -> BiometryKind
+    /// Cold start with a restored session: locks when the policy is enabled.
     @discardableResult
     func applicationDidLaunch() async -> AppLockState
     func applicationDidEnterBackground() async
     /// Locks again when the app stayed in the background longer than the timeout.
     @discardableResult
     func applicationWillEnterForeground() async -> AppLockState
-    /// Runs device-owner authentication (Face ID / Touch ID / passcode / Mac password).
+    /// Runs biometric authentication (Face ID / Touch ID). Never the device passcode.
     @discardableResult
     func unlock(reason: String) async throws(KodaError) -> AppLockState
+    /// A password login just succeeded: enter without a second check.
+    func markUnlocked() async
     /// Logout: nothing left to protect.
     func reset() async
 }
@@ -75,6 +80,15 @@ actor BiometricLockServiceImpl: BiometricLockService {
         }
     }
 
+    func biometry() -> BiometryKind {
+        authenticator.biometry()
+    }
+
+    func markUnlocked() {
+        enteredBackgroundAt = nil
+        transition(to: .unlocked)
+    }
+
     @discardableResult
     func applicationDidLaunch() -> AppLockState {
         enteredBackgroundAt = nil
@@ -100,7 +114,7 @@ actor BiometricLockServiceImpl: BiometricLockService {
     func unlock(reason: String) async throws(KodaError) -> AppLockState {
         guard currentState == .locked else { return currentState }
         guard authenticator.canAuthenticate() else {
-            // Biometrics and passcode were removed: locking would leave the user stuck.
+            // Biometrics were removed: open directly (the password login stays available on the same screen).
             transition(to: .unlocked)
             return currentState
         }

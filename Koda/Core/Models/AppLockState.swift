@@ -5,6 +5,14 @@ enum AppLockState: Sendable, Equatable {
     case locked
 }
 
+/// Biometrics available to unlock Koda; `none` means the app opens without a biometric step.
+enum BiometryKind: Sendable, Equatable {
+    case none
+    case faceID
+    case touchID
+    case opticID
+}
+
 /// Biometric lock preferences, configurable from Profile.
 struct BiometricLockPolicy: Codable, Sendable, Equatable {
     var isEnabled: Bool

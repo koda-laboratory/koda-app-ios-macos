@@ -147,7 +147,7 @@ private struct TodayMealsSection: View {
 
     private func detail(for meal: TodayProgress.Meal) -> String {
         let recipe = viewModel.recipe(for: meal.entry)?.recipe
-        let minutes = recipe?.timeMinutes.map { String(localized: "recipe.minutes \($0)") }
+        let minutes = recipe?.displayMinutes.map { String(localized: "recipe.minutes \($0)") }
         let nutrients = recipe?.nutrients.prefix(2).map { String(localized: $0.titleResource) }.joined(separator: " · ")
         return KodaFormat.joined([meal.time.description, minutes, nutrients])
     }

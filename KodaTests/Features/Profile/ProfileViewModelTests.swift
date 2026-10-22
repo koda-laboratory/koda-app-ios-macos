@@ -14,6 +14,8 @@ private actor RecordingLockService: BiometricLockService {
     func applicationDidEnterBackground() {}
     func applicationWillEnterForeground() -> AppLockState { .unlocked }
     func unlock(reason: String) throws(KodaError) -> AppLockState { .unlocked }
+    func biometry() -> BiometryKind { .faceID }
+    func markUnlocked() {}
     func reset() {}
 }
 

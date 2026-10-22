@@ -24,13 +24,13 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Koda uses Face ID to unlock the app and protect your household data."
+            "value": "Koda uses Face ID so you can sign in without typing your password."
           }
         },
         "es": {
           "stringUnit": {
             "state": "translated",
-            "value": "Koda usa Face ID para desbloquear la app y proteger los datos de tu hogar."
+            "value": "Koda usa Face ID para que entres sin escribir la contraseña."
           }
         }
       }

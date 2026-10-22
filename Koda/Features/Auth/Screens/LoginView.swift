@@ -1,13 +1,45 @@
 import SwiftUI
 
-/// Password login. Accounts are created at home (signup is disabled).
+/// The Face ID / Touch ID entry offered to a returning user on top of the password form.
+struct BiometricUnlock {
+    let kind: BiometryKind
+    let isAuthenticating: Bool
+    let action: () -> Void
+
+    var titleKey: LocalizedStringKey {
+        switch kind {
+        case .touchID: "unlock.touch-id"
+        case .opticID: "unlock.optic-id"
+        case .faceID, .none: "unlock.face-id"
+        }
+    }
+
+    var systemImage: String {
+        switch kind {
+        case .touchID: "touchid"
+        case .opticID: "opticid"
+        case .faceID, .none: "faceid"
+        }
+    }
+}
+
+/// Password login. Accounts are created at home (signup is disabled). A returning user also gets the Face ID /
+/// Touch ID button (`biometricUnlock`), so there is a single sign-in step.
 struct LoginView: View {
     @State private var viewModel: LoginViewModel
     @Environment(AppLifecycleCoordinator.self) private var coordinator: AppLifecycleCoordinator?
     @FocusState private var focusedField: FieldID?
+    private let biometricUnlock: BiometricUnlock?
 
-    init(viewModel: LoginViewModel) {
+    init(viewModel: LoginViewModel, biometricUnlock: BiometricUnlock? = nil) {
         _viewModel = State(initialValue: viewModel)
+        self.biometricUnlock = biometricUnlock
+    }
+
+    /// The biometric button only exists when the device has enrolled biometrics.
+    private var availableBiometricUnlock: BiometricUnlock? {
+        guard let biometricUnlock, biometricUnlock.kind != .none else { return nil }
+        return biometricUnlock
     }
 
     var body: some View {
@@ -35,17 +67,44 @@ struct LoginView: View {
                         .font(KodaTypography.hero)
                         .foregroundStyle(KodaColor.textPrimary)
                         .accessibilityAddTraits(.isHeader)
-                    Text("login.subtitle")
+                    Text(availableBiometricUnlock == nil ? "login.subtitle" : "unlock.subtitle")
                         .font(KodaTypography.body)
                         .foregroundStyle(KodaColor.textSecondary)
                 }
 
+                if let biometric = availableBiometricUnlock {
+                    PrimaryButton(
+                        biometric.titleKey,
+                        systemImage: biometric.systemImage,
+                        isLoading: biometric.isAuthenticating,
+                        action: biometric.action
+                    )
+                    .accessibilityIdentifier("login-biometric")
+
+                    Text("unlock.or-password")
+                        .font(KodaTypography.footnote.weight(.semibold))
+                        .foregroundStyle(KodaColor.textSecondary)
+                        .frame(maxWidth: .infinity)
+                }
+
                 LoginFormFields(viewModel: viewModel, focusedField: $focusedField)
 
-                PrimaryButton("login.submit", isLoading: viewModel.state.isSubmitting) {
-                    Task { await viewModel.send(.submit) }
+                if availableBiometricUnlock == nil {
+                    PrimaryButton("login.submit", isLoading: viewModel.state.isSubmitting) {
+                        Task { await viewModel.send(.submit) }
+                    }
+                    .accessibilityIdentifier("login-submit")
+                } else {
+                    Button {
+                        Task { await viewModel.send(.submit) }
+                    } label: {
+                        Text("login.submit")
+                            .frame(maxWidth: .infinity)
+                    }
+                    .buttonStyle(.kodaPill(.outline))
+                    .disabled(viewModel.state.isSubmitting)
+                    .accessibilityIdentifier("login-submit")
                 }
-                .accessibilityIdentifier("login-submit")
 
                 Text("login.private-note")
                     .font(KodaTypography.footnote)

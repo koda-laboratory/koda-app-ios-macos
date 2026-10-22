@@ -22,6 +22,12 @@ struct Recipe: Sendable, Equatable, Identifiable {
     let imagePath: String?
     let emoji: String?
     let isFavorite: Bool
+
+    /// Preparation time worth showing: imported recipes often carry 0 when the time was never filled in.
+    var displayMinutes: Int? {
+        guard let timeMinutes, timeMinutes > 0 else { return nil }
+        return timeMinutes
+    }
 }
 
 struct RecipeIngredient: Sendable, Equatable, Identifiable {

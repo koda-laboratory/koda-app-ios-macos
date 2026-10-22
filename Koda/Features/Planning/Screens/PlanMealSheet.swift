@@ -122,7 +122,7 @@ private struct PlanMealRecipePicker: View {
                     VStack(alignment: .leading, spacing: 2) {
                         Text(verbatim: item.recipe.name)
                             .foregroundStyle(KodaColor.textPrimary)
-                        if let minutes = item.recipe.timeMinutes {
+                        if let minutes = item.recipe.displayMinutes {
                             Text("recipe.minutes \(minutes)")
                                 .font(KodaTypography.caption)
                                 .foregroundStyle(KodaColor.textSecondary)

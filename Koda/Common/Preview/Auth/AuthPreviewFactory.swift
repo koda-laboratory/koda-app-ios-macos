@@ -43,6 +43,8 @@ private struct PreviewObserveAppLockUseCase: ObserveAppLockUseCase {
 
 private struct PreviewUnlockAppUseCase: UnlockAppUseCase {
     func execute(reason: String) async throws(KodaError) -> AppLockState { .locked }
+
+    func biometry() async -> BiometryKind { .faceID }
 }
 
 /// The sample household used by every preview.
