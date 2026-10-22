@@ -169,6 +169,7 @@ struct RecipeEditorSheet: View {
             }
         }
         .dismissKeyboard()
+        .keyboardMargin()
         .presentationDetents([.large])
         .platformSheetSize(width: 600, height: 760)
         .task { await viewModel.send(.appeared) }

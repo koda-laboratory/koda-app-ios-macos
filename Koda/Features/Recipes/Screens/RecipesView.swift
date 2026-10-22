@@ -93,6 +93,7 @@ struct RecipesView: View {
         .navigationTitle(Text("tab.recipes"))
         .platformHidesNavigationBar()
         .dismissKeyboard()
+        .keyboardMargin()
         .sheet(item: $viewModel.presentedSheet) { _ in
             RecipeEditorSheet(viewModel: Assembly.makeRecipeEditorViewModel(recipeID: nil, container: container))
         }

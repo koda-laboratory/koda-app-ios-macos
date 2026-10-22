@@ -23,22 +23,31 @@ struct PrimaryButton: View {
 
     var body: some View {
         Button(action: action) {
-            HStack(spacing: KodaSpacing.xs) {
-                if isLoading {
-                    ProgressView()
-                        .tint(KodaColor.cream)
-                } else if let systemImage {
-                    Image(systemName: systemImage)
+            // The label keeps the same size and content while loading: the spinner fades in over the hidden title
+            // instead of being inserted next to it, so the glass background never re-lays out or cross-fades.
+            ZStack {
+                HStack(spacing: KodaSpacing.xs) {
+                    if let systemImage {
+                        Image(systemName: systemImage)
+                    }
+                    Text(titleKey)
+                        .font(KodaTypography.headline)
                 }
-                Text(titleKey)
-                    .font(KodaTypography.headline)
+                .opacity(isLoading ? 0 : 1)
+
+                ProgressView()
+                    .tint(KodaColor.cream)
+                    .opacity(isLoading ? 1 : 0)
             }
             .frame(maxWidth: .infinity, minHeight: KodaSize.hitTarget)
+            .transaction { $0.animation = nil }
         }
         .buttonStyle(.glassProminent)
         .tint(KodaColor.brand)
         .controlSize(.large)
-        .disabled(isLoading)
+        // Not `.disabled`: that greys the glass out. Taps are ignored while loading and VoiceOver hears it.
+        .allowsHitTesting(!isLoading)
+        .accessibilityValue(isLoading ? Text("common.loading") : Text(verbatim: ""))
     }
 }
 

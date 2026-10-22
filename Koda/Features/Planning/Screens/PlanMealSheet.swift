@@ -94,6 +94,7 @@ struct PlanMealSheet: View {
             .toast($viewModel.toast)
         }
         .dismissKeyboard()
+        .keyboardMargin()
         .presentationDetents([.large])
         .platformSheetSize()
         .task { await viewModel.send(.appeared) }

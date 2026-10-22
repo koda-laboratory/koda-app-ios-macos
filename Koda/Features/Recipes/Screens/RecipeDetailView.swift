@@ -51,6 +51,7 @@ struct RecipeDetailView: View {
             }
         }
         .dismissKeyboard()
+        .keyboardMargin()
         .toast($viewModel.toast)
         .sheet(item: $viewModel.presentedSheet) { sheet in
             switch sheet {

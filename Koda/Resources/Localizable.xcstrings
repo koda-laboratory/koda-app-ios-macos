@@ -222,6 +222,23 @@
         }
       }
     },
+    "common.loading": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Loading"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cargando"
+          }
+        }
+      }
+    },
     "common.save": {
       "extractionState": "manual",
       "localizations": {
@@ -1470,6 +1487,40 @@
           "stringUnit": {
             "state": "needs_review",
             "value": "Vegetales"
+          }
+        }
+      }
+    },
+    "password.hide": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hide password"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ocultar contraseña"
+          }
+        }
+      }
+    },
+    "password.show": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Show password"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mostrar contraseña"
           }
         }
       }

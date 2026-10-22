@@ -11,6 +11,18 @@ struct LoginView: View {
     }
 
     var body: some View {
+        content
+            .ignoresSafeArea(edges: .top)
+            .background(KodaColor.background)
+            .dismissKeyboard()
+            .toast($viewModel.toast)
+            .onChange(of: viewModel.state) {
+                guard case .completed(let userID) = viewModel.state else { return }
+                Task { await coordinator?.didSignIn(userID: userID) }
+            }
+    }
+
+    private var content: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: KodaSpacing.l) {
                 LoginArcsHeader()
@@ -47,14 +59,8 @@ struct LoginView: View {
             .frame(maxWidth: .infinity)
         }
         .scrollBounceBehavior(.basedOnSize)
-        .ignoresSafeArea(edges: .top)
-        .background(KodaColor.background)
-        .dismissKeyboard()
-        .toast($viewModel.toast)
-        .onChange(of: viewModel.state) {
-            guard case .completed(let userID) = viewModel.state else { return }
-            Task { await coordinator?.didSignIn(userID: userID) }
-        }
+        .scrollDismissesKeyboard(.interactively)
+        .keyboardMargin()
     }
 }
 
@@ -78,12 +84,16 @@ private struct LoginFormFields: View {
                 labelKey: "login.password",
                 errorKey: viewModel.showsPasswordError ? "login.password.missing" : nil
             ) {
-                SecureField("login.password.placeholder", text: $viewModel.form.password)
-                    .textContentType(.password)
-                    .submitLabel(.go)
-                    .focused(focusedField, equals: .password)
-                    .onSubmit { Task { await viewModel.send(.submit) } }
-                    .accessibilityIdentifier("login-password")
+                PasswordField(
+                    placeholderKey: "login.password.placeholder",
+                    text: $viewModel.form.password,
+                    focus: focusedField,
+                    field: .password
+                ) {
+                    Task { await viewModel.send(.submit) }
+                }
+                .submitLabel(.go)
+                .accessibilityIdentifier("login-password")
             }
             if case .failed(let messageKey) = viewModel.state {
                 Label(LocalizedStringKey(messageKey), systemImage: "exclamationmark.circle")
@@ -119,7 +129,8 @@ private struct LabeledField<Field: View>: View {
             field()
                 .textFieldStyle(.plain)
                 .font(KodaTypography.body.weight(.medium))
-                .padding(.horizontal, KodaSpacing.m)
+                .padding(.leading, KodaSpacing.m)
+                .padding(.trailing, KodaSpacing.xs)
                 .frame(minHeight: KodaSize.fieldHeight)
                 .background(KodaColor.surface, in: RoundedRectangle(cornerRadius: KodaSpacing.m, style: .continuous))
                 .overlay {

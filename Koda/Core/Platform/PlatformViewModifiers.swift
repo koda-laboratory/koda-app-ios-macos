@@ -57,6 +57,16 @@ extension View {
         #endif
     }
 
+    /// Password content type (AutoFill) and no autocapitalization, also when the password is revealed as plain text.
+    func platformPasswordField() -> some View {
+        #if os(iOS)
+            textInputAutocapitalization(.never)
+                .textContentType(.password)
+        #else
+            textContentType(.password)
+        #endif
+    }
+
     /// Decimal keyboard on iPhone.
     func platformDecimalField() -> some View {
         #if os(iOS)

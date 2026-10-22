@@ -92,6 +92,7 @@ struct ShoppingView: View {
         .navigationTitle(Text("tab.shopping"))
         .platformHidesNavigationBar()
         .dismissKeyboard()
+        .keyboardMargin()
         .toast($viewModel.toast)
         .sheet(item: $viewModel.presentedSheet) { _ in
             NotificationsExplanationSheet(

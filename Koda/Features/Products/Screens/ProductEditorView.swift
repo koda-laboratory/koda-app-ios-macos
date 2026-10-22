@@ -94,6 +94,7 @@ struct ProductEditorView: View {
             }
         }
         .dismissKeyboard()
+        .keyboardMargin()
         .toast($viewModel.toast)
         .task { await viewModel.send(.appeared) }
         .onChange(of: viewModel.state) {
