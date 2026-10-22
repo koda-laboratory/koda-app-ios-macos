@@ -21,10 +21,17 @@ struct KodaApp: App {
             }
         }
         .onChange(of: scenePhase) { _, newPhase in
-            guard !ProcessInfo.processInfo.skipsAppBootstrap else { return }
-            let loggerService = DependencyContainer.shared.required(LoggerService.self)
-            loggerService.debug("scenePhase \(String(describing: newPhase))")
-            // Phase 2: trigger SyncEngine on `.active` (local-first rule).
+            #if os(iOS)
+                // The Mac reports activation through its app delegate instead.
+                guard let coordinator = appDelegate.coordinator else { return }
+                Task {
+                    switch newPhase {
+                    case .active: await coordinator.sceneDidBecomeActive()
+                    case .background: await coordinator.sceneDidEnterBackground()
+                    default: break
+                    }
+                }
+            #endif
         }
 
         #if os(macOS)

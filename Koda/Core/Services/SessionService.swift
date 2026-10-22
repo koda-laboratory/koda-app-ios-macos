@@ -1,8 +1,8 @@
 import Foundation
 
-/// Owns the persisted `UserSession` and broadcasts its changes. Skeleton for Phase 2: login, restore,
-/// biometric lock and logout use cases build on it.
-protocol SessionService: SessionTokenProviding, Sendable {
+/// Owns the persisted `UserSession` and broadcasts its changes. Login, restore, forced login and logout use
+/// cases build on it.
+protocol SessionService: SessionTokenProviding, SessionExpiryProviding, Sendable {
     func current(errorHandling: KodaErrorHandlingPolicy) async throws(KodaError) -> UserSession?
     func delete() async throws(KodaError)
     func events() async -> AsyncStream<UserSession?>
@@ -26,14 +26,21 @@ actor SessionServiceImpl: SessionService {
     private let errorCenter: KodaErrorCenter
     private let loggerService: any LoggerService
     private let repository: any SessionRepository
+    private let clock: @Sendable () -> Date
     private var continuations: [UUID: AsyncStream<UserSession?>.Continuation] = [:]
 
     // MARK: - Lifecycle
 
-    init(repository: any SessionRepository, errorCenter: KodaErrorCenter, loggerService: any LoggerService) {
+    init(
+        repository: any SessionRepository,
+        errorCenter: KodaErrorCenter,
+        loggerService: any LoggerService,
+        clock: @escaping @Sendable () -> Date = { .now }
+    ) {
         self.repository = repository
         self.errorCenter = errorCenter
         self.loggerService = loggerService
+        self.clock = clock
     }
 
     // MARK: - Public Methods
@@ -74,6 +81,11 @@ actor SessionServiceImpl: SessionService {
 
     func accessToken() async -> String? {
         try? await current(errorHandling: .suppressed)?.accessToken
+    }
+
+    func sessionNeedsRefresh() async -> Bool {
+        guard let session = try? await current(errorHandling: .suppressed) else { return false }
+        return session.needsRefresh(now: clock())
     }
 
     // MARK: - Stream

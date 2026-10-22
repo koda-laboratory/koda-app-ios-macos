@@ -1,3 +1,9 @@
+/// Tells whether the stored access token is about to expire, so it is refreshed before a request instead of
+/// after a 401.
+protocol SessionExpiryProviding: Sendable {
+    func sessionNeedsRefresh() async -> Bool
+}
+
 protocol HTTPService: Sendable {
     @discardableResult
     func execute<Request: HTTPRequest>(_ request: Request) async throws(KodaError) -> Request.Response
@@ -10,28 +16,32 @@ final class HTTPServiceImpl: HTTPService, Sendable {
     private let executor: any HTTPRequestExecuting
     private let errorCenter: KodaErrorCenter
     private let sessionRecovery: any HTTPSessionRecovery
+    private let sessionExpiry: (any SessionExpiryProviding)?
 
     // MARK: - Lifecycle
 
     init(
         executor: any HTTPRequestExecuting,
         errorCenter: KodaErrorCenter,
-        sessionRecovery: any HTTPSessionRecovery
+        sessionRecovery: any HTTPSessionRecovery,
+        sessionExpiry: (any SessionExpiryProviding)? = nil
     ) {
         self.executor = executor
         self.errorCenter = errorCenter
         self.sessionRecovery = sessionRecovery
+        self.sessionExpiry = sessionExpiry
     }
 
     // MARK: - Public Methods
 
     @discardableResult
     func execute<Request: HTTPRequest>(_ request: Request) async throws(KodaError) -> Request.Response {
-        let recoveryGeneration: Int?
+        var recoveryGeneration: Int?
         if request.allowsSessionRecovery {
             recoveryGeneration = await sessionRecovery.generation()
-        } else {
-            recoveryGeneration = nil
+            if let generation = recoveryGeneration, try await refreshIfAboutToExpire(after: generation) {
+                recoveryGeneration = await sessionRecovery.generation()
+            }
         }
 
         do {
@@ -51,6 +61,27 @@ final class HTTPServiceImpl: HTTPService, Sendable {
     }
 
     // MARK: - Session Recovery
+
+    /// Proactive refresh when the access token expires within 60 s, through the same single-flight recovery as a
+    /// 401. Offline or server failures let the request go ahead (it may still succeed or recover on 401);
+    /// rejected credentials stop it (the recovery already published `forceLogin`).
+    private func refreshIfAboutToExpire(after generation: Int) async throws(KodaError) -> Bool {
+        guard let sessionExpiry, await sessionExpiry.sessionNeedsRefresh() else { return false }
+
+        let trigger = KodaError(
+            type: .auth,
+            reason: "The access token is about to expire.",
+            rawCode: KodaErrorCode.sessionExpired.rawValue
+        )
+        switch await sessionRecovery.recoverSession(after: generation, triggeredBy: trigger) {
+        case .recovered:
+            return true
+        case .failed(let error) where error.invalidatesSession:
+            throw error
+        case .failed:
+            return false
+        }
+    }
 
     private func recoverSessionAndRetry<Request: HTTPRequest>(
         _ request: Request,

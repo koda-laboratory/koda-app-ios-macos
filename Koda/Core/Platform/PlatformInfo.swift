@@ -26,6 +26,12 @@ enum PlatformInfo {
         ProcessInfo.processInfo.operatingSystemVersionString
     }
 
+    /// APNs environment of this build (`APNS_ENVIRONMENT` build setting): `sandbox` for Debug builds signed with a
+    /// development profile, `production` for Release (TestFlight).
+    static var apnsEnvironment: String {
+        AppEnvironment.nonEmptyValue(forKey: "APNS_ENVIRONMENT") ?? "production"
+    }
+
     /// `CFBundleShortVersionString` and `CFBundleVersion`, for example `1.0.0 (1)`.
     static var appVersion: String {
         let info = Bundle.main.infoDictionary ?? [:]
