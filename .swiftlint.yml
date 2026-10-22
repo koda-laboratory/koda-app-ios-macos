@@ -33,6 +33,10 @@ identifier_name:
   excluded:
     # Conventional identifier required by Identifiable.
     - id
+    # GRDB's conventional name for the `Database` connection.
+    - db
+    # Field name of the sync contract (`op: upsert | delete`).
+    - op
 
 type_name:
   max_length:
