@@ -19,10 +19,10 @@ This repository is the native app of Koda, a private household app whose first m
 - `Koda/Assembly/`: `Assembly.swift`, `Assembly+Core.swift`, `Assembly+Auth.swift` (more `Assembly+<Feature>.swift` per feature), `DependencyContainer.swift`, `Inject.swift`.
 - `Koda/Common/`: `Architecture/` (`MVIViewModel`, `FormState`, `FormViewModel`), `Theme/` (`KodaColor`, `KodaSpacing`, `KodaRadius`, `KodaTypography`, `KodaGradient`, `KodaArcs`), `Presentation/<Type>/` (shared components), `Preview/` (fixture factories, created with the first feature).
 - `Koda/Core/`:
-  - `Api/`: `HTTPService`, `HTTPRequestExecutor`, `HTTPSessionRecovery` (single-flight actor), `HTTPTransport`, `HTTPLogger`; `Providers/Supabase/` (`SupabaseRequest`, `SupabaseEnvironment`, `SupabaseHeaders`, `AuthAPI`; planned `KodaAPI`).
+  - `Api/`: `HTTPService`, `HTTPRequestExecutor`, `HTTPSessionRecovery` (single-flight actor), `HTTPTransport`, `HTTPLogger`; `Providers/Supabase/` (`SupabaseRequest`, `SupabaseEnvironment`, `SupabaseHeaders`, `AuthAPI`, `KodaAPI`).
   - `Error/`: `KodaError`, `KodaErrorCenter`, `KodaErrorMapper`, `KodaError+Presentation`.
   - `Logging/`, `Navigation/` (`AppRouter`, `AppTab`, `AppRoute`), `Platform/` (the only place besides `App/` with `#if os(...)`, UIKit, or AppKit), `Security/` (Keychain), `DataSources/`, `Repositories/`, `Services/` (`SessionService`), `UseCases/Session/`, `Models/`.
-  - Planned: `Database/` (GRDB `AppDatabase`, migrations, records, outbox), `Sync/` (`SyncEngine` actor), `Notifications/`, `DeepLink/`.
+  - `Database/` (GRDB `AppDatabase`, migrations, records, `LocalMutationWriter` for row + outbox writes), `Sync/` (`SyncEngine` and `SyncScheduler` actors). Planned: `Notifications/`, `DeepLink/`.
 - `Koda/Features/<Feature>/`: `Screens`, `Components`, `Utils`, `ViewModels`, `Models` (`DTOs`, `Forms`), `UseCases`, `Repositories` (`Protocols/`), `DataSources`. Planned features: Auth, Today, Planning, Recipes, Products, Shopping, Profile.
 - `Koda/Intents/` (created with the first intent): planned App Intents, entities, App Shortcuts, and snippets.
 - `Koda/Extensions/`: Swift extensions.

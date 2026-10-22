@@ -5,7 +5,7 @@ description: Implement Koda push on iPhone and Mac — APNs registration after l
 
 # Push notifications
 
-> Status: planned for Phase 4 of `../PLAN.md`. The backend side (`devices`, `push_queue`, Edge Function `push` with an ES256 `.p8` JWT over HTTP/2) lives in `../koda-backend`. The `.p8` key never enters this repository.
+> Status: app side implemented in Phase 2 (registration through `AppLifecycleCoordinator` → `RegisterDeviceUseCase` → `DeviceRepository`, silent push and `BGAppRefreshTask` → `SyncScheduler.syncNow`); the end-to-end acceptance test is Phase 4 of `../PLAN.md`. The backend side (`devices`, `push_queue`, Edge Function `push` with an ES256 `.p8` JWT over HTTP/2) lives in `../koda-backend`. The `.p8` key never enters this repository.
 
 ## v1 scope: silent sync only
 
@@ -14,7 +14,7 @@ Any change from another device or from the MCP server sends an invisible push �
 ## Registration
 
 1. After login (and on every launch with a session), call `registerForRemoteNotifications()` through a `Core/Platform/` abstraction (`UIApplication` on iOS, `NSApplication` on macOS).
-2. The delegates in `Koda/App/iOS/AppDelegate+iOS.swift` and `Koda/App/macOS/AppDelegate+macOS.swift` receive the token and forward it to a Core service (planned `Core/Notifications/PushRegistrationService`).
+2. The delegates in `Koda/App/iOS/AppDelegate+iOS.swift` and `Koda/App/macOS/AppDelegate+macOS.swift` receive the token and forward it to `AppLifecycleCoordinator.didRegisterForRemoteNotifications(deviceToken:)`, which runs `RegisterDeviceUseCase` (`Core/UseCases/Device/`). `apns_env` comes from the `APNS_ENVIRONMENT` build setting (Info.plist).
 3. Upload with `PUT /functions/v1/api/devices`: hex token, `platform` (`ios` | `macos`), `apns_env` (`sandbox` for Xcode/Debug builds, `production` for TestFlight), app version. Re-upload when the token changes.
 4. Logout: `DELETE /devices/:id` before clearing the session.
 
@@ -35,14 +35,14 @@ Headers: `apns-push-type: background`, `apns-priority: 5`, `apns-expiration` ≈
 
 ## Backups for delayed pushes
 
-- iOS `BGAppRefreshTask` with identifier `com.kodalabs.app.sync` (listed in `BGTaskSchedulerPermittedIdentifiers`), rescheduled after each sync.
+- iOS `BGAppRefreshTask` with identifier `com.kodalabs.app.refresh` (listed in `BGTaskSchedulerPermittedIdentifiers`), rescheduled after each sync.
 - Sync on foreground and on network recovery (see `local-first-sync`).
 - iOS throttles background pushes (a few per hour, Low Power Mode). **If the user force-quits the app from the app switcher, iOS stops delivering silent pushes until it is reopened**; Profile explains this.
 
 ## Configuration
 
 - Entitlements: `aps-environment` in `Configuration/Koda-iOS.entitlements`, `com.apple.developer.aps-environment` in `Configuration/Koda-macOS.entitlements` (`development` locally; export rewrites to `production`).
-- `Info.plist`: `UIBackgroundModes` = `remote-notification`, `fetch`; `BGTaskSchedulerPermittedIdentifiers` = `com.kodalabs.app.sync`.
+- `Info.plist`: `UIBackgroundModes` = `remote-notification`, `fetch`; `BGTaskSchedulerPermittedIdentifiers` = `com.kodalabs.app.refresh`.
 - App ID capabilities: Push Notifications (iOS + macOS).
 
 ## Acceptance test
