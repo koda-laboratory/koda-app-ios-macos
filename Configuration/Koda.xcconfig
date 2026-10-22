@@ -9,7 +9,7 @@ KODA_BUNDLE_IDENTIFIER = com.kodalabs.app
 KODA_WIDGETS_BUNDLE_IDENTIFIER = $(KODA_BUNDLE_IDENTIFIER).widgets
 APP_GROUP = group.com.kodalabs.app
 KEYCHAIN_ACCESS_GROUP = $(DEVELOPMENT_TEAM).$(KODA_BUNDLE_IDENTIFIER)
-BACKGROUND_SYNC_TASK_IDENTIFIER = $(KODA_BUNDLE_IDENTIFIER).sync
+BACKGROUND_SYNC_TASK_IDENTIFIER = $(KODA_BUNDLE_IDENTIFIER).refresh
 
 // Team and signing. Profiles are managed by fastlane match (fastlane/Matchfile).
 DEVELOPMENT_TEAM = MUDCX7X324
@@ -35,6 +35,11 @@ SWIFT_VERSION = 6
 SUPABASE_URL = https:/$()/vccllqqmrebbdfpekoud.supabase.co
 // Overridden in Koda.private.xcconfig with the sb_publishable_… key. Never use secret keys in the app.
 SUPABASE_PUBLISHABLE_KEY =
+// APNs environment sent with PUT /devices. Debug builds are signed with a development profile (sandbox);
+// Release builds go to TestFlight (production).
+APNS_ENVIRONMENT = sandbox
+APNS_ENVIRONMENT[config=Release] = production
+
 HTTP_LOGGING_ENABLED = NO
 HTTP_LOGGING_ENABLED[config=Debug] = YES
 
