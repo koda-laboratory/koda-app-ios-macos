@@ -128,52 +128,119 @@ private struct PlanningCompactContent: View {
     @Environment(AppRouter.self) private var router
     @Environment(\.locale) private var locale
 
+    /// Scroll targets: the header, and a marker above each day card (the cards' own identity is their day, so
+    /// the markers need distinct ids).
+    private enum ScrollTarget: Hashable {
+        case top
+        case day(LocalDay)
+    }
+    /// Height of the week strip, so a day scrolled to sits just below the pinned strip instead of behind it.
+    @State private var stripHeight: CGFloat = 0
+    /// Height of the title header: once scrolled past it, the strip pins to the top.
+    @State private var headerHeight: CGFloat = 0
+    @State private var isStripPinned = false
+
     var body: some View {
         ScrollViewReader { proxy in
             ScrollView {
-                LazyVStack(alignment: .leading, spacing: KodaSpacing.l - 6) {
-                    header
-                    WeekStrip(days: stripDays, selected: viewModel.selectedDay) { day in
-                        Task { await viewModel.send(.selectDay(day)) }
-                        withAnimation { proxy.scrollTo(day, anchor: .top) }
+                // A plain VStack (one week is short): every day exists, so the strip can scroll to any of them.
+                VStack(alignment: .leading, spacing: KodaSpacing.l - 6) {
+                    PlanningHeader(
+                        subtitle: header.subtitle,
+                        range: header.range,
+                        onPrevious: header.onPrevious,
+                        onToday: {
+                            // "Hoy" may stay in the same week, so it scrolls up itself.
+                            header.onToday()
+                            withAnimation { proxy.scrollTo(ScrollTarget.top, anchor: .top) }
+                        },
+                        onNext: header.onNext
+                    )
+                    .id(ScrollTarget.top)
+                    .onGeometryChange(for: CGFloat.self) {
+                        $0.size.height
+                    } action: {
+                        headerHeight = $0
                     }
-                    ForEach(viewModel.drafts) { draft in
-                        PlanningDraftCard(
-                            draft: draft,
-                            isDiscarding: viewModel.draftAction == .discarding(draft.id),
-                            onReview: { router.navigate(to: .mealPlanDraft(id: draft.id), in: .planning) },
-                            onDiscard: { Task { await viewModel.send(.discardDraft(draft)) } }
-                        )
-                    }
-                    ForEach(viewModel.week?.days ?? []) { day in
-                        PlanningDayCard(
-                            day: day,
-                            title: title(for: day.day),
-                            slots: viewModel.visibleSlots,
-                            slotTimes: viewModel.slotTimes,
-                            isEaten: viewModel.isEaten,
-                            onAdd: { slot in Task { await viewModel.send(.addMeal(day.day, slot)) } },
-                            onEdit: { entry in Task { await viewModel.send(.editMeal(entry)) } },
-                            onRemove: { entry in Task { await viewModel.send(.removeMeal(entry)) } }
-                        )
-                    }
+                    weekStrip(proxy)
+                        .opacity(isStripPinned ? 0 : 1)
+                        .onGeometryChange(for: CGFloat.self) {
+                            $0.size.height
+                        } action: {
+                            stripHeight = $0
+                        }
+                    dayContent
                 }
                 .padding(.horizontal, KodaSpacing.l - 4)
                 .padding(.top, KodaSpacing.s)
                 .padding(.bottom, KodaSpacing.xl * 4)
             }
-            .task(id: viewModel.week?.startDay) {
-                // Open on the selected day (today), like the approved mockup.
-                guard viewModel.week != nil else { return }
-                proxy.scrollTo(viewModel.selectedDay, anchor: .top)
+            .onScrollGeometryChange(for: Bool.self) { geometry in
+                geometry.contentOffset.y + geometry.contentInsets.top
+                    > KodaSpacing.s + headerHeight + KodaSpacing.l - 6 - KodaSpacing.xs
+            } action: { _, pinned in
+                isStripPinned = pinned
+            }
+            .overlay(alignment: .top) {
+                if isStripPinned {
+                    weekStrip(proxy)
+                        .padding(.horizontal, KodaSpacing.l - 4)
+                        .padding(.bottom, KodaSpacing.xs)
+                        .background(KodaColor.background.ignoresSafeArea(edges: .top))
+                }
+            }
+            .onChange(of: viewModel.weekStart) {
+                // Changing week starts again from the top instead of jumping to a day.
+                withAnimation { proxy.scrollTo(ScrollTarget.top, anchor: .top) }
             }
             .safeAreaInset(edge: .bottom) {
                 GenerateShoppingButton(cycle: viewModel.shoppingCycle) {
                     Task { await viewModel.send(.generateShopping) }
                 }
-                .padding(.leading, KodaSpacing.l - 4)
-                .padding(.trailing, KodaSize.fab + KodaSpacing.l + KodaSpacing.xs)
+                .padding(.horizontal, KodaSpacing.l - 4)
                 .padding(.bottom, KodaSpacing.s)
+            }
+        }
+    }
+
+    /// The week strip, inline under the title and pinned to the top once the title scrolls away.
+    private func weekStrip(_ proxy: ScrollViewProxy) -> some View {
+        WeekStrip(days: stripDays, selected: viewModel.selectedDay) { day in
+            Task { await viewModel.send(.selectDay(day)) }
+            // A day of the strip brings its card into view, below the pinned strip.
+            withAnimation { proxy.scrollTo(ScrollTarget.day(day), anchor: .top) }
+        }
+        .padding(.top, KodaSpacing.xs)
+    }
+
+    /// Drafts and the day cards.
+    @ViewBuilder private var dayContent: some View {
+        ForEach(viewModel.drafts) { draft in
+            PlanningDraftCard(
+                draft: draft,
+                isDiscarding: viewModel.draftAction == .discarding(draft.id),
+                onReview: { router.navigate(to: .mealPlanDraft(id: draft.id), in: .planning) },
+                onDiscard: { Task { await viewModel.send(.discardDraft(draft)) } }
+            )
+        }
+        ForEach(viewModel.week?.days ?? []) { day in
+            PlanningDayCard(
+                day: day,
+                title: title(for: day.day),
+                slots: viewModel.visibleSlots,
+                slotTimes: viewModel.slotTimes,
+                isEaten: viewModel.isEaten,
+                onAdd: { slot in Task { await viewModel.send(.addMeal(day.day, slot)) } },
+                onEdit: { entry in Task { await viewModel.send(.editMeal(entry)) } },
+                onRemove: { entry in Task { await viewModel.send(.removeMeal(entry)) } }
+            )
+            .background(alignment: .top) {
+                // The scroll target starts a strip's height above the card, so scrolling it to the
+                // top leaves the card right under the pinned strip.
+                Color.clear
+                    .frame(height: stripHeight + KodaSpacing.s + KodaSpacing.xs)
+                    .id(ScrollTarget.day(day.day))
+                    .padding(.top, -(stripHeight + KodaSpacing.s + KodaSpacing.xs))
             }
         }
     }

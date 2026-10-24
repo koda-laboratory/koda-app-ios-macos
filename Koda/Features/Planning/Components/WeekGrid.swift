@@ -60,7 +60,7 @@ private struct WeekGridDayHeader: View {
                 .foregroundStyle(isToday ? KodaColor.taupe : KodaColor.textSecondary)
             Text(verbatim: KodaFormat.dayNumber(day))
                 .font(KodaTypography.headline.weight(.heavy))
-                .foregroundStyle(isToday ? KodaColor.cream : (isPast ? KodaColor.textTertiary : KodaColor.textPrimary))
+                .foregroundStyle(isToday ? KodaColor.cream : (isPast ? KodaColor.textSecondary : KodaColor.textPrimary))
         }
         .padding(.horizontal, isToday ? KodaSpacing.s - 2 : 0)
         .padding(.vertical, KodaSpacing.xs - 2)
@@ -99,7 +99,10 @@ private struct WeekGridCell: View {
                 .disabled(isPast)
                 .background {
                     RoundedRectangle(cornerRadius: KodaSpacing.s + 2, style: .continuous)
-                        .strokeBorder(KodaColor.brand.opacity(0.22), style: StrokeStyle(lineWidth: 1, dash: [4, 3]))
+                        .strokeBorder(
+                            KodaColor.brandText.opacity(isPast ? 0.18 : 0.35),
+                            style: StrokeStyle(lineWidth: 1, dash: [4, 3])
+                        )
                 }
             } else {
                 ForEach(meals) { entry in
@@ -135,13 +138,14 @@ private struct WeekGridMeal: View {
                 }
                 Text(verbatim: entry.title)
                     .font(KodaTypography.subheadline.weight(.bold))
-                    .strikethrough(isPast && isEaten)
                     .foregroundStyle(foreground)
                     .multilineTextAlignment(.leading)
-                if isEaten, !isPast {
+                if isEaten {
+                    // A past meal reads as done through this label instead of a dimmed strikethrough,
+                    // which was illegible on the dark surface.
                     Text("planning.grid.eaten")
-                        .font(KodaTypography.caption)
-                        .foregroundStyle(KodaColor.textSecondary)
+                        .font(KodaTypography.caption.weight(.semibold))
+                        .foregroundStyle(KodaColor.brandText)
                 } else if let servings = entry.servings, !isPast, !isNext {
                     Text("planning.grid.servings \(Int(servings))")
                         .font(KodaTypography.caption)
@@ -173,7 +177,7 @@ private struct WeekGridMeal: View {
 
     private var background: Color {
         if isNext { return KodaColor.onyx }
-        if isPast { return KodaColor.surface.opacity(0.5) }
+        if isPast { return KodaColor.surface }
         if !entry.isRecipe { return KodaColor.accentSoft }
         if isEaten { return KodaColor.surface }
         return KodaColor.walnut
@@ -181,7 +185,7 @@ private struct WeekGridMeal: View {
 
     private var foreground: Color {
         if isNext || isUpcomingRecipe { return KodaColor.cream }
-        if isPast { return KodaColor.textTertiary }
+        if isPast { return KodaColor.textSecondary }
         return KodaColor.textPrimary
     }
 }

@@ -41,7 +41,6 @@ struct PlanningDayCard: View {
             }
             .background(KodaColor.surface, in: RoundedRectangle(cornerRadius: KodaRadius.medium, style: .continuous))
         }
-        .id(day.day)
     }
 
     private enum Row: Identifiable {
