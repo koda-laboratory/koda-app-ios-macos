@@ -150,6 +150,7 @@ struct RecipeEditorSheet: View {
                 case .product:
                     SearchPickerSheet(
                         titleKey: "recipe-editor.pick-product",
+                        emptyTitleKey: "products.empty.title",
                         items: viewModel.products.map { ($0.id, $0.name) }
                     ) { id in
                         if let product = viewModel.products.first(where: { $0.id == id }) {
@@ -159,6 +160,7 @@ struct RecipeEditorSheet: View {
                 case .recipe:
                     SearchPickerSheet(
                         titleKey: "recipe-editor.pick-recipe",
+                        emptyTitleKey: "recipes.empty.title",
                         items: viewModel.includableRecipes.map { ($0.id, $0.name) }
                     ) { id in
                         if let recipe = viewModel.includableRecipes.first(where: { $0.id == id }) {
@@ -173,6 +175,13 @@ struct RecipeEditorSheet: View {
         .presentationDetents([.large])
         .platformSheetSize(width: 600, height: 760)
         .task { await viewModel.send(.appeared) }
+        .platformHaptic(trigger: viewModel.state) { _, state in
+            switch state {
+            case .completed: .success
+            case .deleted: .impact(weight: .medium)
+            default: nil
+            }
+        }
         .onChange(of: viewModel.state) {
             if viewModel.state == .completed || viewModel.state == .deleted { dismiss() }
         }
@@ -203,6 +212,8 @@ private struct ChipGrid<Item: Hashable>: View {
 /// A searchable list that returns one id (products for ingredients, recipes to include).
 struct SearchPickerSheet: View {
     let titleKey: LocalizedStringKey
+    /// Shown when there is nothing to pick from at all.
+    let emptyTitleKey: LocalizedStringKey
     let items: [(UUID, String)]
     let onPick: (UUID) -> Void
     @State private var query = ""
@@ -217,6 +228,13 @@ struct SearchPickerSheet: View {
                         dismiss()
                     }
                     .foregroundStyle(KodaColor.textPrimary)
+                }
+            }
+            .overlay {
+                if items.isEmpty {
+                    ContentUnavailableView(emptyTitleKey, systemImage: "tray")
+                } else if filtered.isEmpty {
+                    ContentUnavailableView.search(text: query)
                 }
             }
             .searchable(text: $query)

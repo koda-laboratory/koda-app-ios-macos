@@ -25,6 +25,7 @@ struct RecipeDetailView: View {
             }
         }
         .background(KodaColor.background)
+        .feedbackHaptic(viewModel.feedback)
         .platformMacNavigationTitle(viewModel.detail?.recipe.name ?? "")
         .platformInlineNavigationTitle()
         .platformTransparentNavigationBar()
@@ -189,6 +190,7 @@ private struct RecipeActions: View {
             .foregroundStyle(foreground)
             .frame(maxWidth: .infinity, minHeight: 74)
             .background(fill, in: RoundedRectangle(cornerRadius: KodaRadius.medium, style: .continuous))
+            .kodaHoverHighlight(cornerRadius: KodaRadius.medium)
             .contentShape(RoundedRectangle(cornerRadius: KodaRadius.medium))
         }
         .buttonStyle(.plain)
@@ -215,6 +217,7 @@ private struct RecipeIngredientsSection: View {
                     HStack {
                         Text(verbatim: ingredient.productName)
                             .font(KodaTypography.body.weight(.semibold))
+                            .foregroundStyle(KodaColor.textPrimary)
                         Spacer()
                         let quantity = KodaFormat.quantity(ingredient.quantity, unit: ingredient.unit, locale: locale)
                         Text(quantity.isEmpty ? String(localized: "recipe.ingredients.no-quantity") : quantity)
@@ -223,6 +226,7 @@ private struct RecipeIngredientsSection: View {
                     }
                     .padding(.horizontal, KodaSpacing.m)
                     .padding(.vertical, KodaSpacing.s + 1)
+                    .accessibilityElement(children: .combine)
                     Divider().overlay(KodaColor.background)
                 }
                 ForEach(detail.components) { component in
@@ -230,15 +234,18 @@ private struct RecipeIngredientsSection: View {
                         HStack(spacing: KodaSpacing.s) {
                             Image(systemName: "book.closed")
                                 .foregroundStyle(KodaColor.brandText)
+                                .accessibilityHidden(true)
                             VStack(alignment: .leading, spacing: 2) {
                                 Text("recipe.includes").kodaEyebrow()
+                                // Not walnut deep: the chip fill is walnut deep in dark mode.
                                 Text(verbatim: component.childRecipeName)
                                     .font(KodaTypography.body.weight(.bold))
-                                    .foregroundStyle(KodaColor.walnutDeep)
+                                    .foregroundStyle(KodaColor.textPrimary)
                             }
                             Spacer()
                             Image(systemName: "chevron.right")
                                 .foregroundStyle(KodaColor.brandText)
+                                .accessibilityHidden(true)
                         }
                         .padding(.horizontal, KodaSpacing.m)
                         .padding(.vertical, KodaSpacing.s + 1)

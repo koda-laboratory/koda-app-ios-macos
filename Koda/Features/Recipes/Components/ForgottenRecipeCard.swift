@@ -12,7 +12,7 @@ struct ForgottenRecipeCard: View {
                 .font(KodaTypography.caption.weight(.bold))
                 .padding(.horizontal, KodaSpacing.s - 2)
                 .padding(.vertical, KodaSpacing.xxs + 1)
-                .background(isFirst ? KodaColor.taupe.opacity(0.22) : Color.white.opacity(0.45), in: Capsule())
+                .background(isFirst ? KodaColor.taupe.opacity(0.22) : KodaColor.cream.opacity(0.45), in: Capsule())
             Spacer(minLength: KodaSpacing.s)
             Text(verbatim: name)
                 .font(KodaTypography.title)

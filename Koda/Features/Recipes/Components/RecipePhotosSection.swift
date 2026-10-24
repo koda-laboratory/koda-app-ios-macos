@@ -161,6 +161,7 @@ private struct PhotoThumbnail: View {
         }
         .buttonStyle(.plain)
         .accessibilityLabel(Text(item.isCover ? "recipe.photos.cover-photo" : "recipe.photos.photo"))
+        .kodaHoverHighlight(cornerRadius: KodaRadius.tile)
         .contextMenu {
             if !item.isCover {
                 Button("recipe.photos.use-as-cover", systemImage: "rectangle.inset.filled", action: onSetCover)

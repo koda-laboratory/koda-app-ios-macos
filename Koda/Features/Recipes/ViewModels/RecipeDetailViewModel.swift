@@ -90,6 +90,7 @@ final class RecipeDetailViewModel: MVIViewModel {
     var presentedSheet: RecipeDetailSheet?
     var presentedViewer: RecipePhotoViewerRequest?
     var toast: Toast?
+    private(set) var feedback: FeedbackEvent?
 
     @ObservationIgnored private let useCases: UseCases
     @ObservationIgnored private let debounce: Duration
@@ -237,6 +238,7 @@ final class RecipeDetailViewModel: MVIViewModel {
         guard let recipe = detail?.recipe else { return }
         do {
             try await useCases.setFavorite.execute(recipeID: recipeID, isFavorite: !recipe.isFavorite)
+            feedback = FeedbackEvent(recipe.isFavorite ? .removed : .added)
         } catch {
             toast = .error(error)
         }
@@ -247,6 +249,7 @@ final class RecipeDetailViewModel: MVIViewModel {
         photoSaveState = .saving
         do {
             try await useCases.addPhoto.execute(recipeID: recipeID, imageData: data, asCover: asCover)
+            feedback = FeedbackEvent(.added)
         } catch {
             toast = .error(error)
         }
@@ -265,6 +268,7 @@ final class RecipeDetailViewModel: MVIViewModel {
     private func deletePhoto(_ item: RecipeGalleryItem) async {
         do {
             try await useCases.deletePhoto.execute(recipeID: recipeID, item: item)
+            feedback = FeedbackEvent(.removed)
             // The viewer closes when its last image goes.
             if detail?.gallery.count ?? 0 <= 1 { presentedViewer = nil }
         } catch {
@@ -280,6 +284,7 @@ final class RecipeDetailViewModel: MVIViewModel {
                 source: .manual,
                 mealPlanEntryID: nil
             )
+            feedback = FeedbackEvent(.added)
             toast = Toast(messageKey: "recipe.toast.added-to-shopping")
         } catch {
             toast = .error(error)

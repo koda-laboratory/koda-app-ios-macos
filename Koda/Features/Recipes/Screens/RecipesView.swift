@@ -47,6 +47,7 @@ struct RecipesView: View {
                                             days: item.stats.daysSinceLastEaten(today: viewModel.today) ?? 0,
                                             isFirst: index == 0
                                         )
+                                        .kodaHoverHighlight(cornerRadius: KodaRadius.large - 4)
                                     }
                                     .buttonStyle(.plain)
                                 }
@@ -83,11 +84,15 @@ struct RecipesView: View {
                                     detail: detail(item),
                                     imagePath: item.recipe.imagePath
                                 )
+                                .padding(KodaSpacing.xxs)
+                                .kodaHoverHighlight()
+                                .padding(-KodaSpacing.xxs)
                             }
                             .buttonStyle(.plain)
                             .accessibilityIdentifier("recipe-tile-\(item.id)")
                         }
                     }
+                    .kodaAnimation(value: viewModel.filtered.map(\.id))
                 }
             }
             .padding(.horizontal, KodaSpacing.l - 4)
@@ -134,7 +139,9 @@ private struct RecipeSearchField: View {
                 Button {
                     text = ""
                 } label: {
-                    Image(systemName: "xmark.circle.fill").foregroundStyle(KodaColor.textTertiary)
+                    Image(systemName: "xmark.circle.fill")
+                        .foregroundStyle(KodaColor.textTertiary)
+                        .kodaHitTarget()
                 }
                 .buttonStyle(.plain)
                 .accessibilityLabel(Text("common.clear"))
