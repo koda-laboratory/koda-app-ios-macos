@@ -18,6 +18,57 @@
         }
       }
     },
+    "appearance.dark": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dark"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Oscuro"
+          }
+        }
+      }
+    },
+    "appearance.light": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Light"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Claro"
+          }
+        }
+      }
+    },
+    "appearance.system": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "System"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Sistema"
+          }
+        }
+      }
+    },
     "category.basics": {
       "extractionState": "manual",
       "localizations": {
@@ -2651,6 +2702,23 @@
         }
       }
     },
+    "profile.appearance": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Appearance"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Apariencia"
+          }
+        }
+      }
+    },
     "profile.household": {
       "extractionState": "manual",
       "localizations": {
@@ -3600,23 +3668,6 @@
         }
       }
     },
-    "recipe.action.eaten": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "We ate it"
-          }
-        },
-        "es": {
-          "stringUnit": {
-            "state": "needs_review",
-            "value": "La comimos"
-          }
-        }
-      }
-    },
     "recipe.action.plan": {
       "extractionState": "manual",
       "localizations": {
@@ -4004,23 +4055,6 @@
           "stringUnit": {
             "state": "needs_review",
             "value": "Añadida a la compra"
-          }
-        }
-      }
-    },
-    "recipe.toast.logged": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Logged as eaten today"
-          }
-        },
-        "es": {
-          "stringUnit": {
-            "state": "needs_review",
-            "value": "Apuntada como comida hoy"
           }
         }
       }
@@ -4777,23 +4811,6 @@
         }
       }
     },
-    "shopping.group.no-store": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "No store"
-          }
-        },
-        "es": {
-          "stringUnit": {
-            "state": "needs_review",
-            "value": "Sin tienda"
-          }
-        }
-      }
-    },
     "shopping.group.other": {
       "extractionState": "manual",
       "localizations": {
@@ -4807,57 +4824,6 @@
           "stringUnit": {
             "state": "needs_review",
             "value": "Otros"
-          }
-        }
-      }
-    },
-    "shopping.grouping": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Group by"
-          }
-        },
-        "es": {
-          "stringUnit": {
-            "state": "needs_review",
-            "value": "Agrupar por"
-          }
-        }
-      }
-    },
-    "shopping.grouping.category": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Category"
-          }
-        },
-        "es": {
-          "stringUnit": {
-            "state": "needs_review",
-            "value": "Categoría"
-          }
-        }
-      }
-    },
-    "shopping.grouping.store": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Store"
-          }
-        },
-        "es": {
-          "stringUnit": {
-            "state": "needs_review",
-            "value": "Tienda"
           }
         }
       }
@@ -5018,6 +4984,23 @@
           "stringUnit": {
             "state": "needs_review",
             "value": "Marca si ya lo tenéis"
+          }
+        }
+      }
+    },
+    "shopping.shared.title": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "In several recipes"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "En varias recetas"
           }
         }
       }

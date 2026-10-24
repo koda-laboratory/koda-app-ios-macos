@@ -6,6 +6,7 @@ struct ShoppingView: View {
     @Environment(AppRouter.self) private var router
     @Environment(\.locale) private var locale
     @FocusState private var isQuickAddFocused: Bool
+    @State private var isSharedExpanded = true
 
     init(viewModel: ShoppingViewModel) {
         _viewModel = State(initialValue: viewModel)
@@ -15,12 +16,14 @@ struct ShoppingView: View {
         let layout = viewModel.layout(
             categoryTitle: { String(localized: $0.titleResource).uppercased(with: locale) },
             otherTitle: String(localized: "shopping.group.other").uppercased(with: locale),
-            noStoreTitle: String(localized: "shopping.group.no-store").uppercased(with: locale),
             quantity: { KodaFormat.quantity($0, unit: $1, locale: locale) }
         )
         ScrollView {
             LazyVStack(alignment: .leading, spacing: KodaSpacing.m) {
-                ShoppingHeader(viewModel: viewModel, pendingCount: layout.pendingCount)
+                ScreenHeader(
+                    subtitle: String(localized: "shopping.pending \(layout.pendingCount)"),
+                    title: String(localized: "tab.shopping")
+                ) { EmptyView() }
                 ShoppingCycleCard(title: cycleTitle, subtitle: cycleSubtitle) {
                     router.selectedTab = .planning
                 }
@@ -30,9 +33,27 @@ struct ShoppingView: View {
                     EmptyStateView(titleKey: "shopping.empty.title", messageKey: "shopping.empty.message")
                 }
 
+                if !layout.sharedRows.isEmpty {
+                    ShoppingRecipeEntryCard(
+                        title: String(localized: "shopping.shared.title"),
+                        subtitle: String(
+                            localized:
+                                "shopping.recipe.left \(layout.sharedRows.filter { $0.status == .pending }.count)"
+                        ),
+                        systemImage: "square.stack",
+                        isExpanded: isSharedExpanded,
+                        rows: layout.sharedRows,
+                        showsRecipes: true,
+                        onToggleExpanded: { withAnimation { isSharedExpanded.toggle() } },
+                        onToggleHave: { row in Task { await viewModel.send(.toggleHave(row)) } },
+                        onToggleFrozen: { row in Task { await viewModel.send(.toggleFrozen(row)) } }
+                    )
+                    .accessibilityIdentifier("shopping-shared")
+                }
+
                 ForEach(layout.recipeEntries) { entry in
                     ShoppingRecipeEntryCard(
-                        entry: entry,
+                        title: entry.title,
                         subtitle: recipeSubtitle(entry),
                         isExpanded: viewModel.expandedEntryIDs.contains(entry.id),
                         rows: recipeRows(entry, layout: layout),
@@ -53,6 +74,7 @@ struct ShoppingView: View {
                             Task { await viewModel.send(.removeRow(row)) }
                         }
                     )
+                    .accessibilityIdentifier("shopping-recipe-\(entry.id)")
                 }
 
                 ForEach(layout.pendingGroups) { group in
@@ -124,15 +146,9 @@ struct ShoppingView: View {
     }
 
     private func meta(for row: ShoppingRow) -> String {
-        switch viewModel.grouping {
-        case .category:
-            return KodaFormat.joined([
-                row.isText ? String(localized: "shopping.free-text") : row.quantityText, row.storeNames.first,
-            ])
-        case .store:
-            let category = row.category.map { String(localized: $0.titleResource) }
-            return KodaFormat.joined([row.quantityText, row.isText ? nil : category])
-        }
+        KodaFormat.joined([
+            row.isText ? String(localized: "shopping.free-text") : row.quantityText, row.storeNames.first,
+        ])
     }
 
     private func recipeRows(_ entry: ShoppingEntry, layout: ShoppingLayout) -> [ShoppingRow] {
@@ -155,27 +171,6 @@ struct ShoppingView: View {
         let frozen =
             entry.frozenItemCount > 0 ? String(localized: "shopping.recipe.frozen \(entry.frozenItemCount)") : nil
         return KodaFormat.joined([left, frozen])
-    }
-}
-
-/// "12 por comprar · Compra" with the category/store toggle.
-private struct ShoppingHeader: View {
-    @Bindable var viewModel: ShoppingViewModel
-    let pendingCount: Int
-
-    var body: some View {
-        ScreenHeader(
-            subtitle: String(localized: "shopping.pending \(pendingCount)"),
-            title: String(localized: "tab.shopping")
-        ) {
-            Picker("shopping.grouping", selection: $viewModel.grouping) {
-                Text("shopping.grouping.category").tag(ShoppingGrouping.category)
-                Text("shopping.grouping.store").tag(ShoppingGrouping.store)
-            }
-            .pickerStyle(.segmented)
-            .fixedSize()
-            .accessibilityIdentifier("shopping-grouping")
-        }
     }
 }
 
@@ -336,6 +331,10 @@ private struct ShoppingFrozenSection: View {
     }
 
     private func mealText(_ row: ShoppingRow) -> String {
+        // One product frozen for several recipes lists them all.
+        if case .shared = row.source, let recipes = row.recipeTitle {
+            return String(localized: "shopping.frozen.for-recipe \(recipes)")
+        }
         if let meal = row.frozenItem?.meal, let recipe = meal.recipeName {
             let day = KodaFormat.shortDay(meal.day, locale: locale)
             let slot = String(localized: meal.slot.titleResource).lowercased()

@@ -51,7 +51,6 @@ struct ShoppingViewModelTests {
         viewModel.layout(
             categoryTitle: { $0.rawValue },
             otherTitle: "other",
-            noStoreTitle: "none",
             quantity: { quantity, unit in KodaFormat.quantity(quantity, unit: unit) }
         )
     }
@@ -158,5 +157,64 @@ struct ShoppingViewModelTests {
         )
         await viewModel.send(.toggleFrozen(row))
         #expect(await eventually { layout(viewModel).frozenRows.first?.recipeTitle == "Arroz a la cubana" })
+    }
+
+    @Test("A product two recipes need shows once and ticking it updates both recipes")
+    func sharedProducts() async throws {
+        let environment = try await FeatureEnvironment.make()
+        let eggs = try await environment.product("Huevos")
+        let potatoes = try await environment.product("Patatas")
+        let fish = try await environment.product("Merluza")
+        let omelette = try await environment.recipe("Tortilla de patata", products: [eggs, potatoes])
+        let meatballs = try await environment.recipe("Albóndigas de pescado", products: [eggs, fish])
+        let viewModel = makeViewModel(environment)
+        await viewModel.send(.appeared)
+        #expect(await eventually { viewModel.state == .ready })
+
+        await viewModel.send(.pickSuggestion(.recipe(omelette)))
+        await viewModel.send(.pickSuggestion(.recipe(meatballs)))
+        #expect(await eventually { layout(viewModel).sharedRows.count == 1 })
+        let shared = try #require(layout(viewModel).sharedRows.first)
+        #expect(shared.title == "Huevos")
+        #expect(shared.recipeTitle == "Tortilla de patata · Albóndigas de pescado")
+        #expect(layout(viewModel).recipeEntries.flatMap(\.items).map(\.productName).sorted() == ["Merluza", "Patatas"])
+        #expect(layout(viewModel).pendingCount == 3)
+
+        await viewModel.send(.toggleHave(shared))
+        #expect(await eventually { layout(viewModel).sharedRows.first?.status == .have })
+        let eggItems = viewModel.entries.flatMap(\.items).filter { $0.productID == eggs.id }
+        #expect(eggItems.count == 2)
+        #expect(eggItems.allSatisfy { $0.status == .have })
+        #expect(layout(viewModel).pendingCount == 2)
+
+        // Freezing it keeps the row in the shared card, frozen, and freezes it in both recipes.
+        await viewModel.send(.toggleHave(try #require(layout(viewModel).sharedRows.first)))
+        #expect(
+            await eventually {
+                viewModel.entries.flatMap(\.items).filter { $0.productID == eggs.id }.allSatisfy {
+                    $0.status == .pending
+                }
+            }
+        )
+        await viewModel.send(.toggleFrozen(try #require(layout(viewModel).sharedRows.first)))
+        #expect(await eventually { layout(viewModel).sharedRows.first?.status == .frozen })
+        #expect(layout(viewModel).sharedRows.count == 1)
+        #expect(
+            viewModel.entries.flatMap(\.items).filter { $0.productID == eggs.id }.allSatisfy { $0.status == .frozen }
+        )
+        #expect(!layout(viewModel).recipeEntries.flatMap(\.items).contains { $0.productID == eggs.id })
+        // The freezer shows it once, for both recipes, and taking it out unfreezes both.
+        let frozenEggs = try #require(layout(viewModel).frozenRows.first { $0.title == "Huevos" })
+        #expect(layout(viewModel).frozenRows.filter { $0.title == "Huevos" }.count == 1)
+        #expect(frozenEggs.recipeTitle == "Tortilla de patata · Albóndigas de pescado")
+        await viewModel.send(.toggleFrozen(frozenEggs))
+        #expect(
+            await eventually {
+                viewModel.entries.flatMap(\.items).filter { $0.productID == eggs.id }.allSatisfy {
+                    $0.status == .pending
+                }
+            }
+        )
+        #expect(layout(viewModel).frozenRows.isEmpty)
     }
 }

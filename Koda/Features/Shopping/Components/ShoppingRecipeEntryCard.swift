@@ -1,28 +1,32 @@
 import SwiftUI
 
 /// A recipe entry ("Arroz a la cubana · Lunes 26, comida · 2 por comprar · 1 congelado"), expandable to tick
-/// its products one by one.
+/// its products one by one. Also the "En varias recetas" card, whose rows show the recipes that need them.
 struct ShoppingRecipeEntryCard: View {
-    let entry: ShoppingEntry
+    let title: String
     let subtitle: String
+    var systemImage = "book.closed"
     let isExpanded: Bool
     let rows: [ShoppingRow]
+    /// Rows show their recipes under the name instead of the quantity alone (the shared card).
+    var showsRecipes = false
     let onToggleExpanded: () -> Void
     let onToggleHave: (ShoppingRow) -> Void
     let onToggleFrozen: (ShoppingRow) -> Void
-    let onRemove: () -> Void
+    /// `nil` when the card cannot be removed as a whole.
+    var onRemove: (() -> Void)?
 
     var body: some View {
         VStack(spacing: 0) {
             Button(action: onToggleExpanded) {
                 HStack(spacing: KodaSpacing.s) {
-                    Image(systemName: "book.closed")
+                    Image(systemName: systemImage)
                         .foregroundStyle(KodaColor.taupe)
                         .frame(width: 40, height: 40)
                         .background(KodaColor.onyx, in: RoundedRectangle(cornerRadius: KodaRadius.small))
                         .accessibilityHidden(true)
                     VStack(alignment: .leading, spacing: 3) {
-                        Text(verbatim: entry.title)
+                        Text(verbatim: title)
                             .font(KodaTypography.body.weight(.bold))
                             .foregroundStyle(KodaColor.textPrimary)
                             .multilineTextAlignment(.leading)
@@ -42,9 +46,10 @@ struct ShoppingRecipeEntryCard: View {
             }
             .buttonStyle(.plain)
             .accessibilityValue(Text(isExpanded ? "shopping.recipe.expanded" : "shopping.recipe.collapsed"))
-            .accessibilityIdentifier("shopping-recipe-\(entry.id)")
             .contextMenu {
-                Button("shopping.remove", systemImage: "trash", role: .destructive, action: onRemove)
+                if let onRemove {
+                    Button("shopping.remove", systemImage: "trash", role: .destructive, action: onRemove)
+                }
             }
 
             if isExpanded {
@@ -53,7 +58,8 @@ struct ShoppingRecipeEntryCard: View {
                         Divider().overlay(KodaColor.chip)
                         ShoppingRowView(
                             row: row,
-                            meta: row.quantityText,
+                            meta: showsRecipes
+                                ? KodaFormat.joined([row.recipeTitle, row.quantityText]) : row.quantityText,
                             compact: true,
                             onToggleHave: { onToggleHave(row) },
                             onToggleFrozen: { onToggleFrozen(row) }
@@ -110,7 +116,7 @@ struct ShoppingCycleCard: View {
 #if DEBUG
     #Preview("Recipe entry") {
         ShoppingRecipeEntryCard(
-            entry: ShoppingPreviewFactory.recipeEntry,
+            title: ShoppingPreviewFactory.recipeEntry.title,
             subtitle: "Lunes 26, comida · 2 por comprar",
             isExpanded: true,
             rows: ShoppingPreviewFactory.rows,
@@ -127,8 +133,9 @@ struct ShoppingCycleCard: View {
         VStack {
             ShoppingCycleCard(title: "Compra del viernes 23", subtitle: "Cubre del sáb 24 al vie 30") {}
             ShoppingRecipeEntryCard(
-                entry: ShoppingPreviewFactory.recipeEntry,
+                title: "En varias recetas",
                 subtitle: "2 por comprar",
+                systemImage: "square.stack",
                 isExpanded: false,
                 rows: [],
                 onToggleExpanded: {},

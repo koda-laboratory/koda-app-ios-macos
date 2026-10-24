@@ -87,8 +87,11 @@ struct ShoppingRowView: View {
                     Image(systemName: "snowflake")
                         .font(.body.weight(.semibold))
                         .foregroundStyle(row.status == .frozen ? KodaColor.taupe : KodaColor.textTertiary.opacity(0.7))
-                        .frame(width: KodaSize.hitTarget, height: KodaSize.hitTarget)
+                        // The filled circle stays smaller than the row so it keeps air above and below; the
+                        // tap area is still the full hit target.
+                        .frame(width: KodaSize.hitTarget - 12, height: KodaSize.hitTarget - 12)
                         .background(row.status == .frozen ? KodaColor.onyx : .clear, in: Circle())
+                        .frame(width: KodaSize.hitTarget, height: KodaSize.hitTarget)
                         .contentShape(Circle())
                         .symbolEffect(.bounce, value: row.status == .frozen)
                 }

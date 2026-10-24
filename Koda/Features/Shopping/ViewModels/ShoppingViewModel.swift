@@ -30,7 +30,6 @@ enum ShoppingSheet: Sendable, Equatable, Identifiable {
 
 enum ShoppingIntent: Sendable {
     case appeared
-    case setGrouping(ShoppingGrouping)
     /// Tap on a row: have ↔ pending.
     case toggleHave(ShoppingRow)
     /// Snowflake: frozen ↔ pending.
@@ -44,8 +43,8 @@ enum ShoppingIntent: Sendable {
     case dismissSheet
 }
 
-/// Compra: the continuous list with the three states, grouping by category or store, quick add with product
-/// autocomplete, recipe entries item by item, the freezer and "Ya lo tenemos".
+/// Compra: the continuous list with the three states, products by category, products shared by several recipes
+/// shown once, quick add with product autocomplete, recipe entries item by item, the freezer and "Ya lo tenemos".
 @MainActor
 @Observable
 final class ShoppingViewModel: MVIViewModel {
@@ -75,7 +74,6 @@ final class ShoppingViewModel: MVIViewModel {
     private(set) var recipes: [Recipe] = []
     private(set) var household: HouseholdContext?
     private(set) var expandedEntryIDs: Set<UUID> = []
-    var grouping = ShoppingGrouping.category
     var quickAddText = ""
     var presentedSheet: ShoppingSheet?
     var toast: Toast?
@@ -108,16 +106,13 @@ final class ShoppingViewModel: MVIViewModel {
     func layout(
         categoryTitle: (ProductCategory) -> String,
         otherTitle: String,
-        noStoreTitle: String,
         quantity: (Double?, String?) -> String
     ) -> ShoppingLayout {
         ShoppingLayout(
             entries: entries,
             frozenItems: frozenItems,
-            grouping: grouping,
             categoryTitle: categoryTitle,
             otherTitle: otherTitle,
-            noStoreTitle: noStoreTitle,
             quantity: quantity
         )
     }
@@ -141,8 +136,6 @@ final class ShoppingViewModel: MVIViewModel {
         switch intent {
         case .appeared:
             startObserving()
-        case .setGrouping(let grouping):
-            self.grouping = grouping
         case .toggleHave(let row):
             await setStatus(row.status.togglingHave, for: row)
         case .toggleFrozen(let row):
@@ -207,11 +200,16 @@ final class ShoppingViewModel: MVIViewModel {
 
     private func setStatus(_ status: ShoppingItemStatus, for row: ShoppingRow) async {
         do {
-            switch row.source {
-            case .entry(let id):
-                try await useCases.setEntryStatus.execute(entryID: id, status: status)
-            case .item(_, let itemID):
-                try await useCases.setItemStatus.execute(itemID: itemID, status: status)
+            // A shared row ("Huevos" in two recipes) changes every entry behind it.
+            for target in row.targets {
+                switch target {
+                case .entry(let id):
+                    try await useCases.setEntryStatus.execute(entryID: id, status: status)
+                case .item(_, let itemID):
+                    try await useCases.setItemStatus.execute(itemID: itemID, status: status)
+                case .shared:
+                    continue
+                }
             }
         } catch {
             toast = .error(error)

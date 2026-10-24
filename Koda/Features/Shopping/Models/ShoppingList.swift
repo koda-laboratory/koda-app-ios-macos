@@ -59,7 +59,7 @@ struct ShoppingEntry: Sendable, Equatable, Identifiable {
     let position: Int
     let mealPlanEntryID: UUID?
     /// Products of a recipe entry ("8 productos"), expandable to tick one by one.
-    let items: [ShoppingEntryItem]
+    var items: [ShoppingEntryItem]
     /// Stores that sell the product (product entries only).
     var storeNames: [String] = []
 
