@@ -21,6 +21,9 @@ struct ProductsView: View {
                     Task { await viewModel.send(.newProduct) }
                 }
                 .listRowBackground(Color.clear)
+            } else if viewModel.state == .ready, viewModel.sections.isEmpty {
+                ContentUnavailableView.search(text: viewModel.searchText)
+                    .listRowBackground(Color.clear)
             }
             ForEach(viewModel.sections, id: \.category) { section in
                 Section {
@@ -46,6 +49,8 @@ struct ProductsView: View {
         }
         .scrollContentBackground(.hidden)
         .background(KodaColor.background)
+        .kodaAnimation(value: viewModel.products)
+        .feedbackHaptic(viewModel.feedback)
         .searchable(text: $viewModel.searchText, prompt: Text("products.search"))
         .navigationTitle(Text("products.title"))
         .toolbar {

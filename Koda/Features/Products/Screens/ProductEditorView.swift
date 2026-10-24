@@ -97,6 +97,7 @@ struct ProductEditorView: View {
         .keyboardMargin()
         .toast($viewModel.toast)
         .task { await viewModel.send(.appeared) }
+        .platformHaptic(.success, trigger: viewModel.state) { _, state in state == .completed }
         .onChange(of: viewModel.state) {
             if viewModel.state == .completed { dismiss() }
         }

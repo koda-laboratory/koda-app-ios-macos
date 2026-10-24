@@ -31,6 +31,7 @@ final class ProductsViewModel: MVIViewModel {
     var searchText = ""
     var presentedSheet: ProductsSheet?
     var toast: Toast?
+    private(set) var feedback: FeedbackEvent?
 
     @ObservationIgnored private let observeProducts: any ObserveProductsUseCase
     @ObservationIgnored private let observeStores: any ObserveStoresUseCase
@@ -81,6 +82,7 @@ final class ProductsViewModel: MVIViewModel {
         case .delete(let product):
             do {
                 try await deleteProduct.execute(id: product.id)
+                feedback = FeedbackEvent(.removed)
             } catch {
                 toast = .error(error)
             }
