@@ -16,7 +16,7 @@ var body: some View {
 }
 ```
 
-The canonical modifier lives at `Koda/Common/Presentation/Keyboard/DismissKeyboard.swift` (add it with the first text-input screen if it does not exist yet). It calls `PlatformKeyboard.dismiss()` from `Koda/Core/Platform/`, which resigns the UIKit first responder on iPhone and is a no-op on macOS (hardware keyboard). Reuse it instead of adding screen-specific UIKit, gesture, or focus-management implementations; features must not import UIKit for this (see [`multiplatform`](multiplatform.md)).
+The canonical modifier lives at `Koda/Common/Presentation/Keyboard/DismissKeyboard.swift`. It uses `platformKeyboardDismissTap()` from `Koda/Core/Platform/KeyboardDismissTap.swift`, which installs a window-level UIKit tap recognizer with `cancelsTouchesInView = false` on iPhone and is a no-op on macOS (hardware keyboard). Never implement it with a SwiftUI `onTapGesture` on the screen: inside a `Form` it swallows the taps of row buttons, toggles, and menus. Reuse it instead of adding screen-specific UIKit, gesture, or focus-management implementations; features must not import UIKit for this (see [`multiplatform`](multiplatform.md)).
 
 Apply the modifier at screen level, not separately to each input. Keep field-specific `@FocusState` only when the screen also needs explicit focus traversal, validation focus, or submit behavior.
 
