@@ -11,7 +11,7 @@ Transform the user's intended task into one prompt for interactive Codex. Recomm
 
 - When the prompt targets this repository, inspect relevant files in read-only mode and use discovered paths and commands instead of generic placeholders where practical.
 - Route app tasks through [ios-app-walkthrough](../ios-app-walkthrough/SKILL.md) and mention only the specialist project skills relevant to the requested work. Do not duplicate their detailed rules.
-- Treat `Koda/` as the maintained Swift source of the native iPhone + Mac app (one multiplatform target) and `../koda-backend` as the separate Supabase backend that owns the API contract; `../PLAN.md` holds product decisions. Never direct the target run to edit `.build/` or DerivedData.
+- Treat `Koda/` as the maintained Swift source of the native iPhone + Mac app (one multiplatform target) and `../koda-backend` as the separate Supabase backend that owns the API contract. Never direct the target run to edit `.build/` or DerivedData.
 - Speak to the user in their language. Write the generated prompt in English unless the user requests another language.
 
 ## Load the references

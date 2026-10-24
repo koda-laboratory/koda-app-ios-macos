@@ -48,7 +48,7 @@ Also read every mandatory rule selected by `AGENTS.md`: `development`, `architec
 
 Use this priority when statements conflict:
 
-1. latest explicit decisions and clarifications (including `../PLAN.md`);
+1. latest explicit decisions and clarifications from the user;
 2. out-of-scope statements and acceptance criteria;
 3. required observable behavior;
 4. supporting context and implementation suggestions.

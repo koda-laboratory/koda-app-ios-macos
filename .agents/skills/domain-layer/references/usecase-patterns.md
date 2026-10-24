@@ -1,6 +1,6 @@
 # Use Case Patterns
 
-Feature use cases below are illustrative names from the planned Comidita module (`../PLAN.md`). Session use cases in `Koda/Core/UseCases/Session/` are real.
+Feature use cases below are illustrative names from the Comidita module. Session use cases in `Koda/Core/UseCases/Session/` are real.
 
 ## Pure repository delegation
 

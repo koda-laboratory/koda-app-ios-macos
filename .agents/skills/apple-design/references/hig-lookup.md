@@ -151,4 +151,4 @@ Hand-written files that sit next to the pulled pages. The pull script never over
 
 ## Pages left out
 
-Pages that only apply to macOS (menu bar, windows, pointer, panels, column and outline views) and pages about Siri, App Shortcuts, widgets, Control Center controls, and other technologies were removed from this local copy. Koda **does** ship on the Mac and plans Siri/App Shortcuts, widgets, and a Control (PLAN section 7): read those pages on [developer.apple.com](https://developer.apple.com/design/human-interface-guidelines/) when working on them. Links to them inside the kept pages point at Apple's site.
+Pages that only apply to macOS (menu bar, windows, pointer, panels, column and outline views) and pages about Siri, App Shortcuts, widgets, Control Center controls, and other technologies were removed from this local copy. Koda **does** ship on the Mac and ships Siri/App Shortcuts, widgets, and a Control: read those pages on [developer.apple.com](https://developer.apple.com/design/human-interface-guidelines/) when working on them. Links to them inside the kept pages point at Apple's site.

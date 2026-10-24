@@ -15,7 +15,7 @@ Language rule: talk to the user in **their language** (usually Spanish). The gen
 
 - When the prompt targets this repository, inspect relevant project files in read-only mode before drafting. Do not carry assumptions from another repository into the prompt.
 - Route app work through [ios-app-walkthrough](../ios-app-walkthrough/SKILL.md) and mention only the specialist project skills relevant to the task. Do not duplicate their detailed rules in the generated prompt.
-- Treat `Koda/` as the maintained Swift source of the native iPhone + Mac app (one multiplatform target) and `../koda-backend` as the separate Supabase backend that owns the API contract; `../PLAN.md` holds product decisions. Never direct the target session to edit `.build/` or DerivedData.
+- Treat `Koda/` as the maintained Swift source of the native iPhone + Mac app (one multiplatform target) and `../koda-backend` as the separate Supabase backend that owns the API contract. Never direct the target session to edit `.build/` or DerivedData.
 
 ## Workflow
 

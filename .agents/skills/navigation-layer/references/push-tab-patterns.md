@@ -1,6 +1,6 @@
 # Push and Tab Patterns
 
-Reference: `Koda/Core/Navigation/AppRouter.swift`. Feature destinations named below are planned (PLAN section 5).
+Reference: `Koda/Core/Navigation/AppRouter.swift`. Feature destinations named below are examples; `AppRoute` has the current list.
 
 ## Router
 

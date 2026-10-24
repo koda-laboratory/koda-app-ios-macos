@@ -43,7 +43,7 @@ These apply on top of Apple's guidance whenever the intent lives in this reposit
 - **Placement.** Intents, entities, queries, the `AppShortcutsProvider`, and snippets live in `Koda/Intents/` inside the multiplatform `Koda` app target, so they run on iPhone and Mac. Widget configuration intents and controls live in `KodaWidgets/`.
 - **Local only.** `perform()` reads and writes the local GRDB database through the same use cases as the UI (resolved via `@Dependency` registered at launch). Intents never call the network, never refresh tokens, and leave synchronization to the `SyncEngine` (see the `local-first` rule). Writes record their origin (`source = 'siri'` or `'widget'`).
 - **Locked device.** The database uses `completeUntilFirstUserAuthentication`, so reading today's meals and adding to the shopping list work with the iPhone locked (`.alwaysAllowed`); destructive intents use `.requiresAuthentication`.
-- **Planned intents** (PLAN section 7):
+- **Intents** (see `Koda/Intents/` for the current set):
 
   | Intent | Behavior |
   | --- | --- |

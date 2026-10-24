@@ -5,7 +5,7 @@ description: Implement Koda push on iPhone and Mac — APNs registration after l
 
 # Push notifications
 
-> Status: app side implemented in Phase 2 (registration through `AppLifecycleCoordinator` → `RegisterDeviceUseCase` → `DeviceRepository`, silent push and `BGAppRefreshTask` → `SyncScheduler.syncNow`); the end-to-end acceptance test is Phase 4 of `../PLAN.md`. The backend side (`devices`, `push_queue`, Edge Function `push` with an ES256 `.p8` JWT over HTTP/2) lives in `../koda-backend`. The `.p8` key never enters this repository.
+> Status: app side implemented in Phase 2 (registration through `AppLifecycleCoordinator` → `RegisterDeviceUseCase` → `DeviceRepository`, silent push and `BGAppRefreshTask` → `SyncScheduler.syncNow`); the end-to-end acceptance test is a real two-device check (check an item on one iPhone → it appears on the other and on the Mac within seconds). The backend side (`devices`, `push_queue`, Edge Function `push` with an ES256 `.p8` JWT over HTTP/2) lives in `../koda-backend`. The `.p8` key never enters this repository.
 
 ## v1 scope: silent sync only
 

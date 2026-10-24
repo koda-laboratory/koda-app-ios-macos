@@ -1,6 +1,6 @@
 # ViewModel Patterns
 
-Koda's features are still being built; the type names below (`ShoppingListViewModel`, `LoginViewModel`, …) illustrate the planned features from `../PLAN.md`. Read the current files before editing because state machines evolve with the product.
+The type names below (`ShoppingListViewModel`, `LoginViewModel`, …) illustrate Koda's features. Read the current files before editing because state machines evolve with the product.
 
 ## One deterministic state machine
 

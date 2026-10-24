@@ -55,7 +55,7 @@ Keep it decorative (`accessibilityHidden(true)`) unless it conveys progress; the
 - **Mac**: slightly higher density, hover states (`kodaHoverHighlight(cornerRadius:)` on interactive cards), keyboard shortcuts, resizable windows (`app-resizability`), sidebar + detail columns.
 - **Accessibility**: Dynamic Type (no fixed font sizes), VoiceOver labels, Reduce Motion, Reduce Transparency (opaque fallback for glass), sufficient contrast of taupe text (use it on walnut/onyx, not on cream for body text).
 - **Dark mode** is first-class: verify every screen in both appearances.
-- Before implementing a main screen, a high-fidelity mockup of Today, Planning, Shopping, and Recipes on iPhone and Mac is validated (PLAN section 10).
+- Before implementing a main screen, a high-fidelity mockup of Today, Planning, Shopping, and Recipes on iPhone and Mac is validated.
 
 ## Previews
 

@@ -70,7 +70,7 @@ Do not pass ViewModels, repositories, bindings, closures, or fully loaded screen
 
 ## Native zoom transitions
 
-PLAN section 10 asks for a zoom transition from a card to its detail. Keep the source/destination modifiers in `Common/Presentation/Navigation/`, own the `@Namespace` in `AppTabNavigationStack`, and include collection context in the transition ID when the same entity can appear several times on screen. Platforms without the native zoom keep the same typed route with a no-op modifier provided through `Core/Platform/` if needed.
+The design calls for a zoom transition from a card to its detail. Keep the source/destination modifiers in `Common/Presentation/Navigation/`, own the `@Namespace` in `AppTabNavigationStack`, and include collection context in the transition ID when the same entity can appear several times on screen. Platforms without the native zoom keep the same typed route with a no-op modifier provided through `Core/Platform/` if needed.
 
 ## Modal and full-screen navigation
 

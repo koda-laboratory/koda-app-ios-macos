@@ -1,6 +1,6 @@
 # Koda para iPhone y Mac
 
-App nativa de Koda, la app privada de casa. Su primer módulo, **Comidita**, cubre recetas, planning de comidas y lista de la compra. Swift 6 y SwiftUI en **un único target multiplataforma**: iPhone (iOS 26.5+) y Mac (macOS 26.5+, SwiftUI nativo, no Catalyst). El backend (Supabase) vive en `../koda-backend` y el plan completo en `../PLAN.md`.
+App nativa de Koda, la app privada de casa. Su primer módulo, **Comidita**, cubre recetas, planning de comidas y lista de la compra. Swift 6 y SwiftUI en **un único target multiplataforma**: iPhone (iOS 26.5+) y Mac (macOS 26.5+, SwiftUI nativo, no Catalyst). El backend (Supabase) vive en `../koda-backend`.
 
 ## Configuración
 

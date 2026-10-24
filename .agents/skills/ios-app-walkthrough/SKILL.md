@@ -9,7 +9,7 @@ Route work in this repository to the right rules, skills, and locations.
 
 ## 1. Read the mandatory context
 
-Read `AGENTS.md` and the seven rules in `.agents/rules/`: `development`, `architecture`, `presentation-architecture`, `swiftui-structure`, `keyboard-dismissal`, `multiplatform`, and `local-first`. Product decisions live in `../PLAN.md`; the backend contract lives in `../koda-backend`.
+Read `AGENTS.md` and the seven rules in `.agents/rules/`: `development`, `architecture`, `presentation-architecture`, `swiftui-structure`, `keyboard-dismissal`, `multiplatform`, and `local-first`. The backend contract lives in `../koda-backend`.
 
 ## 2. Choose the smallest set of skills
 

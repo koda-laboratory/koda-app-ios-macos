@@ -5,7 +5,7 @@ description: Implement Koda's local-first data path — GRDB AppDatabase in the 
 
 # Local-first sync
 
-> Status: implemented (Phase 2 of `../PLAN.md`). `Koda/Core/Database/` holds `AppDatabase` (+ `Migrations`), `SyncedTable`, `Records/`, `SyncRowCodec` and the single write path `LocalMutationWriter` (row + outbox in the caller's transaction, tombstones with local cascade, shopping `checked_at`/`name_updated_at`); `Koda/Core/DataSources/Sync/` holds the outbox/cursor/pull application (`SyncLocalDataSource`, with rebase of pending changes on pulled rows) and the HTTP side; `Koda/Core/Sync/` holds `SyncEngine` and `SyncScheduler`. The backend side is owned by `../koda-backend` (`apply_mutations`, `server_seq`). Do not invent contract details beyond what is written here and in the backend; report gaps.
+> Status: implemented. `Koda/Core/Database/` holds `AppDatabase` (+ `Migrations`), `SyncedTable`, `Records/`, `SyncRowCodec` and the single write path `LocalMutationWriter` (row + outbox in the caller's transaction, tombstones with local cascade, shopping `checked_at`/`name_updated_at`); `Koda/Core/DataSources/Sync/` holds the outbox/cursor/pull application (`SyncLocalDataSource`, with rebase of pending changes on pulled rows) and the HTTP side; `Koda/Core/Sync/` holds `SyncEngine` and `SyncScheduler`. The backend side is owned by `../koda-backend` (`apply_mutations`, `server_seq`). Do not invent contract details beyond what is written here and in the backend; report gaps.
 
 Read the `local-first` and `architecture` rules first.
 

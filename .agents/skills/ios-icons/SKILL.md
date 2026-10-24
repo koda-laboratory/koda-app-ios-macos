@@ -8,7 +8,7 @@ description: Choose, size, and audit Koda icons on iPhone and Mac — SF Symbols
 ## Sources
 
 - Product glyphs: **SF Symbols** through `Image(systemName:)`, `Label(_:systemImage:)`, and `Tab(_:systemImage:value:)`. Koda has no custom symbol catalog yet; if a glyph is missing from SF Symbols, add a custom `.symbolset` under `Koda/Resources/Assets.xcassets/Symbols/` exported from the SF Symbols app template, and reference it with `Image(_:)`.
-- Content icons: recipes and products may carry an `emoji` field (PLAN section 3.2); render it as text, not as a symbol.
+- Content icons: recipes and products may carry an `emoji` field; render it as text, not as a symbol.
 - App icon: `Koda/Resources/Assets.xcassets/AppIcon.appiconset/` (`ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon`), covering iOS and macOS sizes. An Icon Composer `.icon` file may replace it for Liquid Glass layering.
 
 ## Rules
@@ -18,7 +18,7 @@ description: Choose, size, and audit Koda icons on iPhone and Mac — SF Symbols
 - Icon-only buttons need a localized accessibility label (`Label` with `.labelStyle(.iconOnly)` or `.accessibilityLabel`); decorative icons are hidden from accessibility.
 - Size icons with fonts/text styles (`.font(KodaTypography.headline)`, `.imageScale`) so they follow Dynamic Type; avoid fixed frames except for intentional asset sizes.
 - Tint with `KodaColor` tokens; use `.symbolRenderingMode(.hierarchical)` or `.palette` deliberately, not by default.
-- Motion: `symbolEffect` for checks and state changes (PLAN section 10), respecting Reduce Motion.
+- Motion: `symbolEffect` for checks and state changes, respecting Reduce Motion.
 - Toolbar and tab items use plain symbols so the system applies its own sizing and Liquid Glass styling (see `apple-design`, `references/hig/icons.md`).
 
 ## App icon
