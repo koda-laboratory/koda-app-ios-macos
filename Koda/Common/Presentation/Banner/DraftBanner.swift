@@ -29,6 +29,7 @@ struct DraftBanner: View {
                 RoundedRectangle(cornerRadius: KodaRadius.card, style: .continuous)
                     .strokeBorder(KodaColor.brand, style: StrokeStyle(lineWidth: 1, dash: [4, 3]))
             }
+            .kodaHoverHighlight()
             .contentShape(RoundedRectangle(cornerRadius: KodaRadius.card, style: .continuous))
         }
         .buttonStyle(.plain)

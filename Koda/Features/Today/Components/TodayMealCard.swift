@@ -11,7 +11,7 @@ struct TodayMealCard: View {
     var body: some View {
         Group {
             if let recipeID = meal.entry.recipeID {
-                NavigationLink(value: AppRoute.recipe(id: recipeID)) { card }
+                NavigationLink(value: AppRoute.recipe(id: recipeID)) { card.kodaHoverHighlight() }
                     .buttonStyle(.plain)
             } else {
                 card
@@ -21,6 +21,13 @@ struct TodayMealCard: View {
             Button("today.meal.change", systemImage: "arrow.triangle.2.circlepath", action: onChange)
             if meal.entry.isRecipe, meal.state != .skipped {
                 Button("today.meal.skip", systemImage: "xmark.circle", role: .destructive, action: onSkip)
+            }
+        }
+        // The context menu is hard to reach with VoiceOver: the same actions as rotor actions.
+        .accessibilityAction(named: Text("today.meal.change"), onChange)
+        .accessibilityActions {
+            if meal.entry.isRecipe, meal.state != .skipped, meal.state != .next {
+                Button("today.meal.skip", action: onSkip)
             }
         }
         .accessibilityIdentifier("today-meal-\(meal.entry.slot.rawValue)")

@@ -48,6 +48,7 @@ final class TodayViewModel: MVIViewModel {
     private(set) var now: Date
     var presentedSheet: TodaySheet?
     var toast: Toast?
+    private(set) var feedback: FeedbackEvent?
 
     /// The use cases Hoy depends on.
     struct UseCases {
@@ -186,6 +187,7 @@ final class TodayViewModel: MVIViewModel {
     private func skip(_ entry: MealPlanEntry) async {
         do {
             try await useCases.skipMeal.execute(entryID: entry.id)
+            feedback = FeedbackEvent(.removed)
             toast = Toast(messageKey: "today.toast.skipped")
         } catch {
             toast = .error(error)
@@ -195,6 +197,7 @@ final class TodayViewModel: MVIViewModel {
     private func resolve(_ item: FrozenItem) async {
         do {
             try await useCases.resolveFrozenItem.execute(frozenItemID: item.id)
+            feedback = FeedbackEvent(.completed)
         } catch {
             toast = .error(error)
         }

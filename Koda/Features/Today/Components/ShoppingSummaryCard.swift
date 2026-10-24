@@ -33,6 +33,7 @@ struct ShoppingSummaryCard: View {
             }
             .padding(KodaSpacing.m)
             .kodaCardBackground()
+            .kodaHoverHighlight()
             .contentShape(RoundedRectangle(cornerRadius: KodaRadius.card))
         }
         .buttonStyle(.plain)

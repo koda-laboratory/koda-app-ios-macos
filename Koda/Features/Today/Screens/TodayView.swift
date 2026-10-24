@@ -64,8 +64,11 @@ struct TodayView: View {
             .padding(.bottom, KodaSpacing.xl * 3)
             .frame(maxWidth: KodaSize.readableWidth)
             .frame(maxWidth: .infinity)
+            .kodaAnimation(value: viewModel.progress)
+            .kodaAnimation(value: viewModel.dueFrozenItems)
         }
         .background(KodaColor.background)
+        .feedbackHaptic(viewModel.feedback)
         .navigationTitle(Text("tab.today"))
         .platformHidesNavigationBar()
         .toast($viewModel.toast)

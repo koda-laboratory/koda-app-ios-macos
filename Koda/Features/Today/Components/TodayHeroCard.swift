@@ -3,9 +3,15 @@ import SwiftUI
 /// "HOY EN CASA · 2 de 3 comidas hechas", with one arc band per meal (breakfast, lunch, dinner).
 struct TodayHeroCard: View {
     let progress: TodayProgress
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
 
     var body: some View {
-        HStack(alignment: .center, spacing: KodaSpacing.m) {
+        // At accessibility sizes the text needs the full width: the arcs go below it.
+        let layout =
+            dynamicTypeSize.isAccessibilitySize
+            ? AnyLayout(VStackLayout(alignment: .leading, spacing: KodaSpacing.m))
+            : AnyLayout(HStackLayout(alignment: .center, spacing: KodaSpacing.m))
+        layout {
             VStack(alignment: .leading, spacing: KodaSpacing.s - 2) {
                 Text("today.hero.eyebrow").kodaEyebrow(color: KodaColor.taupe)
                 if progress.totalCount > 0 {
@@ -23,7 +29,9 @@ struct TodayHeroCard: View {
                     .foregroundStyle(KodaColor.taupeLight)
                     .fixedSize(horizontal: false, vertical: true)
             }
-            Spacer(minLength: 0)
+            if !dynamicTypeSize.isAccessibilitySize {
+                Spacer(minLength: 0)
+            }
             KodaProgressArcs(
                 bandsDone: TodayProgress.bandSlots.map(progress.isBandDone),
                 doneCount: progress.doneCount,
@@ -31,6 +39,7 @@ struct TodayHeroCard: View {
             )
             .frame(width: KodaSize.heroArcsWidth)
         }
+        .frame(maxWidth: .infinity, alignment: .leading)
         .padding(KodaSpacing.l - 2)
         .background(KodaGradient.signature, in: RoundedRectangle(cornerRadius: KodaRadius.large, style: .continuous))
         .overlay {
@@ -71,6 +80,15 @@ struct TodayHeroCard: View {
             .padding()
             .kodaPreview()
             .preferredColorScheme(.dark)
+    }
+
+    #Preview("Hero · accessibility size") {
+        ScrollView {
+            TodayHeroCard(progress: TodayPreviewFactory.progress(done: 2))
+                .padding()
+        }
+        .dynamicTypeSize(.accessibility3)
+        .kodaPreview()
     }
 
     #Preview("Hero · Mac", traits: .fixedLayout(width: 800, height: 300)) {
