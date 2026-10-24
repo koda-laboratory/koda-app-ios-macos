@@ -98,6 +98,7 @@ struct PlanMealSheet: View {
         .presentationDetents([.large])
         .platformSheetSize()
         .task { await viewModel.send(.appeared) }
+        .platformHaptic(.success, trigger: viewModel.state) { _, state in state == .completed }
         .onChange(of: viewModel.state) {
             if viewModel.state == .completed { dismiss() }
         }
@@ -113,6 +114,11 @@ private struct PlanMealRecipePicker: View {
             .accessibilityIdentifier("plan-meal-search")
         if viewModel.showsRecipeError {
             Text("plan-meal.recipe.missing").font(KodaTypography.caption).foregroundStyle(KodaColor.error)
+        }
+        if viewModel.filteredRecipes.isEmpty {
+            Text(viewModel.searchText.isEmpty ? "recipes.empty.title" : "recipes.no-results.title")
+                .font(KodaTypography.callout)
+                .foregroundStyle(KodaColor.textSecondary)
         }
         ForEach(viewModel.filteredRecipes.prefix(40)) { item in
             Button {

@@ -40,6 +40,7 @@ struct PlanningDayCard: View {
                 }
             }
             .background(KodaColor.surface, in: RoundedRectangle(cornerRadius: KodaRadius.medium, style: .continuous))
+            .kodaAnimation(value: rowsToShow.map(\.id))
         }
     }
 
@@ -74,13 +75,17 @@ struct PlanningMealRow: View {
     let isEaten: Bool
     let onEdit: () -> Void
     let onRemove: () -> Void
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
 
     var body: some View {
         Button(action: onEdit) {
-            HStack(spacing: KodaSpacing.s) {
+            SlotRowLayout(isStacked: dynamicTypeSize.isAccessibilitySize) {
                 Text(entry.slot.titleKey)
                     .kodaEyebrow()
-                    .frame(width: KodaSize.slotLabelWidth, alignment: .leading)
+                    .frame(
+                        width: dynamicTypeSize.isAccessibilitySize ? nil : KodaSize.slotLabelWidth,
+                        alignment: .leading
+                    )
                 if entry.isRecipe {
                     Text(verbatim: entry.title)
                         .font(KodaTypography.body.weight(isEaten ? .semibold : .bold))
@@ -104,6 +109,7 @@ struct PlanningMealRow: View {
             Button("planning.meal.change", systemImage: "pencil", action: onEdit)
             Button("planning.meal.remove", systemImage: "trash", role: .destructive, action: onRemove)
         }
+        .accessibilityAction(named: Text("planning.meal.remove"), onRemove)
         .accessibilityIdentifier("planning-meal-\(entry.id)")
     }
 
@@ -117,13 +123,17 @@ struct PlanningMealRow: View {
 struct PlanningAddRow: View {
     let slot: MealSlot
     let action: () -> Void
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
 
     var body: some View {
         Button(action: action) {
-            HStack(spacing: KodaSpacing.s) {
+            SlotRowLayout(isStacked: dynamicTypeSize.isAccessibilitySize) {
                 Text(slot.titleKey)
                     .kodaEyebrow()
-                    .frame(width: KodaSize.slotLabelWidth, alignment: .leading)
+                    .frame(
+                        width: dynamicTypeSize.isAccessibilitySize ? nil : KodaSize.slotLabelWidth,
+                        alignment: .leading
+                    )
                 Text("planning.add-to-slot \(String(localized: slot.titleResource).lowercased())")
                     .font(KodaTypography.subheadline)
                     .foregroundStyle(KodaColor.brandText)
@@ -134,6 +144,21 @@ struct PlanningAddRow: View {
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
+    }
+}
+
+/// A slot row: the slot label in a fixed column beside the content, stacked above it at accessibility text sizes
+/// so neither clips.
+struct SlotRowLayout<Content: View>: View {
+    let isStacked: Bool
+    @ViewBuilder let content: () -> Content
+
+    var body: some View {
+        let layout =
+            isStacked
+            ? AnyLayout(VStackLayout(alignment: .leading, spacing: KodaSpacing.xxs))
+            : AnyLayout(HStackLayout(spacing: KodaSpacing.s))
+        layout { content() }
     }
 }
 
@@ -154,6 +179,24 @@ struct PlanningAddRow: View {
             )
             .padding()
         }
+        .kodaPreview()
+    }
+
+    #Preview("Day card · accessibility size") {
+        ScrollView {
+            PlanningDayCard(
+                day: PlanningPreviewFactory.dayPlan,
+                title: "Hoy, jueves 22",
+                slots: [.breakfast, .lunch, .dinner],
+                slotTimes: .default,
+                isEaten: { $0.slot == .breakfast },
+                onAdd: { _ in },
+                onEdit: { _ in },
+                onRemove: { _ in }
+            )
+            .padding()
+        }
+        .dynamicTypeSize(.accessibility3)
         .kodaPreview()
     }
 

@@ -22,6 +22,7 @@ struct PlanningView: View {
             }
         }
         .background(KodaColor.background)
+        .feedbackHaptic(viewModel.feedback)
         .navigationTitle(Text("tab.planning"))
         .platformHidesNavigationBar()
         .toolbar {
@@ -114,9 +115,10 @@ private struct WeekNavButton: View {
                 .frame(width: KodaSize.hitTarget - 4, height: KodaSize.hitTarget - 4)
                 .background(KodaColor.surface, in: Circle())
                 .overlay { Circle().strokeBorder(KodaColor.brand.opacity(0.18)) }
-                .contentShape(Circle())
+                .kodaHitTarget()
         }
         .buttonStyle(.plain)
+        .help(Text(labelKey))
         .accessibilityLabel(Text(labelKey))
     }
 }
@@ -139,6 +141,7 @@ private struct PlanningCompactContent: View {
     /// Height of the title header: once scrolled past it, the strip pins to the top.
     @State private var headerHeight: CGFloat = 0
     @State private var isStripPinned = false
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     var body: some View {
         ScrollViewReader { proxy in
@@ -152,7 +155,9 @@ private struct PlanningCompactContent: View {
                         onToday: {
                             // "Hoy" may stay in the same week, so it scrolls up itself.
                             header.onToday()
-                            withAnimation { proxy.scrollTo(ScrollTarget.top, anchor: .top) }
+                            withAnimation(KodaMotion.animation(reduceMotion: reduceMotion)) {
+                                proxy.scrollTo(ScrollTarget.top, anchor: .top)
+                            }
                         },
                         onNext: header.onNext
                     )
@@ -191,7 +196,9 @@ private struct PlanningCompactContent: View {
             }
             .onChange(of: viewModel.weekStart) {
                 // Changing week starts again from the top instead of jumping to a day.
-                withAnimation { proxy.scrollTo(ScrollTarget.top, anchor: .top) }
+                withAnimation(KodaMotion.animation(reduceMotion: reduceMotion)) {
+                    proxy.scrollTo(ScrollTarget.top, anchor: .top)
+                }
             }
             .safeAreaInset(edge: .bottom) {
                 GenerateShoppingButton(cycle: viewModel.shoppingCycle) {
@@ -208,8 +215,11 @@ private struct PlanningCompactContent: View {
         WeekStrip(days: stripDays, selected: viewModel.selectedDay) { day in
             Task { await viewModel.send(.selectDay(day)) }
             // A day of the strip brings its card into view, below the pinned strip.
-            withAnimation { proxy.scrollTo(ScrollTarget.day(day), anchor: .top) }
+            withAnimation(KodaMotion.animation(reduceMotion: reduceMotion)) {
+                proxy.scrollTo(ScrollTarget.day(day), anchor: .top)
+            }
         }
+        .platformHaptic(.selection, trigger: viewModel.selectedDay)
         .padding(.top, KodaSpacing.xs)
     }
 

@@ -45,6 +45,7 @@ struct WeekGrid: View {
                 }
             }
         }
+        .kodaAnimation(value: week)
     }
 }
 
@@ -160,8 +161,13 @@ private struct WeekGridMeal: View {
                 if isEaten, !isPast {
                     RoundedRectangle(cornerRadius: KodaSpacing.s + 2, style: .continuous)
                         .strokeBorder(KodaColor.brand, lineWidth: 2)
+                } else if isNext {
+                    // The onyx "now" card needs an edge on the onyx dark background.
+                    RoundedRectangle(cornerRadius: KodaSpacing.s + 2, style: .continuous)
+                        .strokeBorder(KodaColor.separator)
                 }
             }
+            .kodaHoverHighlight(cornerRadius: KodaSpacing.s + 2)
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
@@ -170,6 +176,7 @@ private struct WeekGridMeal: View {
             Button("planning.meal.change", systemImage: "pencil", action: onEdit)
             Button("planning.meal.remove", systemImage: "trash", role: .destructive, action: onRemove)
         }
+        .accessibilityAction(named: Text("planning.meal.remove"), onRemove)
         .accessibilityIdentifier("grid-meal-\(entry.id)")
     }
 

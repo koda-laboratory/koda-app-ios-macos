@@ -56,6 +56,7 @@ final class PlanningViewModel: MVIViewModel {
     var selectedDay: LocalDay
     var presentedSheet: PlanningSheet?
     var toast: Toast?
+    private(set) var feedback: FeedbackEvent?
 
     /// The use cases Planning depends on.
     struct UseCases {
@@ -191,6 +192,7 @@ final class PlanningViewModel: MVIViewModel {
     private func remove(_ entry: MealPlanEntry) async {
         do {
             try await useCases.removePlannedMeal.execute(entryID: entry.id)
+            feedback = FeedbackEvent(.removed)
         } catch {
             toast = .error(error)
         }
@@ -221,6 +223,7 @@ final class PlanningViewModel: MVIViewModel {
         draftAction = .discarding(draft.id)
         do {
             try await useCases.discardDraft.execute(draftID: draft.id)
+            feedback = FeedbackEvent(.removed)
             toast = Toast(messageKey: "planning.draft.discarded")
         } catch {
             toast = .error(error)

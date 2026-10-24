@@ -5,6 +5,7 @@ struct DraftReviewView: View {
     @State private var viewModel: DraftReviewViewModel
     @Environment(\.dismiss) private var dismiss
     @Environment(\.locale) private var locale
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
 
     init(viewModel: DraftReviewViewModel) {
         _viewModel = State(initialValue: viewModel)
@@ -32,16 +33,21 @@ struct DraftReviewView: View {
                     VStack(alignment: .leading, spacing: KodaSpacing.xs) {
                         Text(verbatim: KodaFormat.weekdayAndDay(day.day, locale: locale).capitalizedFirst)
                             .font(KodaTypography.sectionTitle)
+                            .accessibilityAddTraits(.isHeader)
                         VStack(spacing: 0) {
                             ForEach(day.meals) { meal in
-                                HStack(spacing: KodaSpacing.s) {
+                                SlotRowLayout(isStacked: dynamicTypeSize.isAccessibilitySize) {
                                     Text(meal.slot.titleKey)
                                         .kodaEyebrow()
-                                        .frame(width: KodaSize.slotLabelWidth, alignment: .leading)
+                                        .frame(
+                                            width: dynamicTypeSize.isAccessibilitySize ? nil : KodaSize.slotLabelWidth,
+                                            alignment: .leading
+                                        )
                                     Text(verbatim: meal.title)
                                         .font(KodaTypography.body.weight(.semibold))
-                                    Spacer()
+                                        .frame(maxWidth: .infinity, alignment: .leading)
                                 }
+                                .accessibilityElement(children: .combine)
                                 .padding(.horizontal, KodaSpacing.m)
                                 .padding(.vertical, KodaSpacing.s + 2)
                                 if meal.id != day.meals.last?.id {
@@ -78,6 +84,7 @@ struct DraftReviewView: View {
         .platformInlineNavigationTitle()
         .toast($viewModel.toast)
         .task { await viewModel.send(.appeared) }
+        .platformHaptic(.success, trigger: viewModel.state) { _, state in state == .finished }
         .onChange(of: viewModel.state) {
             if viewModel.state == .finished { dismiss() }
         }
