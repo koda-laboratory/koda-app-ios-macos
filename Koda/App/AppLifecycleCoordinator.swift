@@ -26,6 +26,7 @@ final class AppLifecycleCoordinator {
     @ObservationIgnored private let refreshHousehold: any RefreshHouseholdUseCase
     @ObservationIgnored private let registerDevice: any RegisterDeviceUseCase
     @ObservationIgnored private let syncScheduler: any SyncScheduling
+    @ObservationIgnored private let widgetMenu: any WidgetMenuService
     @ObservationIgnored private let lockService: any BiometricLockService
     @ObservationIgnored private let errorCenter: KodaErrorCenter
     @ObservationIgnored private let loggerService: any LoggerService
@@ -42,6 +43,7 @@ final class AppLifecycleCoordinator {
         refreshHousehold: any RefreshHouseholdUseCase,
         registerDevice: any RegisterDeviceUseCase,
         syncScheduler: any SyncScheduling,
+        widgetMenu: any WidgetMenuService,
         lockService: any BiometricLockService,
         errorCenter: KodaErrorCenter,
         loggerService: any LoggerService,
@@ -54,6 +56,7 @@ final class AppLifecycleCoordinator {
         self.refreshHousehold = refreshHousehold
         self.registerDevice = registerDevice
         self.syncScheduler = syncScheduler
+        self.widgetMenu = widgetMenu
         self.lockService = lockService
         self.errorCenter = errorCenter
         self.loggerService = loggerService
@@ -90,6 +93,8 @@ final class AppLifecycleCoordinator {
     func sceneDidBecomeActive() async {
         guard case .signedIn = sessionState else { return }
         await lockService.applicationWillEnterForeground()
+        // After a day change the widgets' menu starts again from the new today.
+        await widgetMenu.start()
         await syncScheduler.requestSync(.foreground)
     }
 
@@ -127,6 +132,7 @@ final class AppLifecycleCoordinator {
             router.popToRoot(in: tab)
         }
         sessionState = .signedOut
+        Task { [widgetMenu] in await widgetMenu.stopAndClear() }
     }
 
     // MARK: - Notifications
@@ -161,6 +167,7 @@ final class AppLifecycleCoordinator {
 
     private func startSignedInServices(trigger: SyncTrigger) async {
         await syncScheduler.start()
+        await widgetMenu.start()
         await syncScheduler.requestSync(trigger)
         registerForRemoteNotifications()
     }

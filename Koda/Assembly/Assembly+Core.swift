@@ -186,6 +186,15 @@ extension Assembly {
             }
             .inObjectScope(.container)
 
+            container.register(WidgetMenuRepository.self) { resolver in
+                WidgetMenuRepositoryImpl(
+                    dataSource: FileWidgetMenuDataSource(),
+                    reloader: WidgetCenterTimelineReloader(),
+                    loggerService: resolver.required(LoggerService.self)
+                )
+            }
+            .inObjectScope(.container)
+
             container.register(SyncScheduling.self) { resolver in
                 let sessionService = resolver.required(SessionService.self)
                 return SyncSchedulerImpl(

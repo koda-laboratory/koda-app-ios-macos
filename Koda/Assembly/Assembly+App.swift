@@ -11,6 +11,7 @@ extension Assembly {
             refreshHousehold: container.required(RefreshHouseholdUseCase.self),
             registerDevice: container.required(RegisterDeviceUseCase.self),
             syncScheduler: container.required(SyncScheduling.self),
+            widgetMenu: container.required(WidgetMenuService.self),
             lockService: container.required(BiometricLockService.self),
             errorCenter: container.required(KodaErrorCenter.self),
             loggerService: container.required(LoggerService.self),

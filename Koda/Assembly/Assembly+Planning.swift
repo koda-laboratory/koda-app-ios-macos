@@ -24,6 +24,15 @@ extension Assembly {
             }
             .inObjectScope(.container)
 
+            container.register(WidgetMenuService.self) { resolver in
+                WidgetMenuServiceImpl(
+                    planningRepository: resolver.required(PlanningRepository.self),
+                    meRepository: resolver.required(MeRepository.self),
+                    widgetMenuRepository: resolver.required(WidgetMenuRepository.self)
+                )
+            }
+            .inObjectScope(.container)
+
             container.register(ObserveTodayMealsUseCase.self) { resolver in
                 ObserveTodayMealsUseCaseImpl(planningRepository: resolver.required(PlanningRepository.self))
             }

@@ -78,6 +78,15 @@
 			path = KodaWidgets;
 			sourceTree = "<group>";
 		};
+		7A11C0DE5A4ED0000000F00D /* KodaShared */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			explicitFileTypes = {
+			};
+			explicitFolders = (
+			);
+			path = KodaShared;
+			sourceTree = "<group>";
+		};
 /* End PBXFileSystemSynchronizedRootGroup section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -117,6 +126,7 @@
 				4A1E9976073617A0CFFB11C8 /* Configuration */,
 				53F6BF4C43FC36CFE5801756 /* Koda */,
 				4B445D66F07EAC35D00CEA6A /* KodaTests */,
+				7A11C0DE5A4ED0000000F00D /* KodaShared */,
 				660C3169D88C90E8D75FA85D /* KodaWidgets */,
 				410E78C26F3D8CAD63CCF9A3 /* Products */,
 			);
@@ -137,6 +147,7 @@
 			dependencies = (
 			);
 			fileSystemSynchronizedGroups = (
+				7A11C0DE5A4ED0000000F00D /* KodaShared */,
 				660C3169D88C90E8D75FA85D /* KodaWidgets */,
 			);
 			name = KodaWidgets;
@@ -185,6 +196,7 @@
 			);
 			fileSystemSynchronizedGroups = (
 				53F6BF4C43FC36CFE5801756 /* Koda */,
+				7A11C0DE5A4ED0000000F00D /* KodaShared */,
 			);
 			name = Koda;
 			packageProductDependencies = (

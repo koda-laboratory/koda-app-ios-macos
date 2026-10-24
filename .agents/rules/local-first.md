@@ -33,5 +33,6 @@ The local GRDB database is the source of truth for the UI on iPhone and Mac. The
 ## Extensions, intents, and background
 
 - The database lives in the App Group container (`group.com.kodalabs.app`) so the app, App Intents, and widgets share it. On iOS the file uses `completeUntilFirstUserAuthentication` protection so intents and background sync can write while the iPhone is locked.
-- App Intents and widgets read and write only the local database through use cases and never call the network; they leave sync to the `SyncEngine`. Widgets never refresh tokens.
+- App Intents read and write only the local database through use cases and never call the network; they leave sync to the `SyncEngine`. Widgets never refresh tokens.
+- Widgets read only the `WidgetMenu` snapshot (`KodaShared/WidgetMenu.swift`, compiled into the app and `KodaWidgets`) that `WidgetMenuService` writes to the App Group whenever the next days' plan or the household settings change, local edits and pulled changes alike. Widgets never open the database or the network; add new widget data to that snapshot.
 - After a pull that changed data, reload widget timelines (`WidgetCenter.shared.reloadAllTimelines()`).
