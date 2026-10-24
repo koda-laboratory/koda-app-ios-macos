@@ -57,7 +57,8 @@ struct KodaApp: App {
     }
 }
 
-/// Menu commands (Mac menu bar, and a hardware keyboard on iPhone): ⌘N new recipe, ⌘⇧L shopping list.
+/// Menu commands (Mac menu bar, and a hardware keyboard on iPhone): ⌘N new recipe, ⌘⇧L shopping list and ⌘1–⌘4
+/// for the sections.
 struct KodaCommands: Commands {
     let coordinator: AppLifecycleCoordinator?
 
@@ -74,6 +75,16 @@ struct KodaCommands: Commands {
             }
             .keyboardShortcut("l", modifiers: [.command, .shift])
             .disabled(!isSignedIn)
+        }
+        CommandGroup(before: .sidebar) {
+            ForEach(Array(AppTab.allCases.enumerated()), id: \.element) { index, tab in
+                Button(tab.titleKey) {
+                    coordinator?.router.selectedTab = tab
+                }
+                .keyboardShortcut(KeyEquivalent(Character(String(index + 1))))
+                .disabled(!isSignedIn)
+            }
+            Divider()
         }
     }
 

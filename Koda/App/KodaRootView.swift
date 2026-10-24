@@ -25,6 +25,7 @@ struct KodaRootView: View {
                     }
             }
         }
+        .platformMainWindowMinSize()
         .environment(coordinator)
         .environment(coordinator.router)
         .environment(\.recipeImageLoader, Self.imageLoader)

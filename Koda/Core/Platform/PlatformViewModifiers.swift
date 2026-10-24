@@ -46,6 +46,15 @@ extension View {
         #endif
     }
 
+    /// The main Mac window never shrinks below what the week grid and the sidebar need. No-op on iPhone.
+    func platformMainWindowMinSize() -> some View {
+        #if os(macOS)
+            frame(minWidth: 960, minHeight: 620)
+        #else
+            self
+        #endif
+    }
+
     /// Email keyboard and content type on iPhone.
     func platformEmailField() -> some View {
         #if os(iOS)
