@@ -28,6 +28,7 @@ final class AppLifecycleCoordinator {
     @ObservationIgnored private let syncScheduler: any SyncScheduling
     @ObservationIgnored private let widgetMenu: any WidgetMenuService
     @ObservationIgnored private let intentIndexing: any IntentIndexing
+    @ObservationIgnored private let imageUploads: any RecipeImageUploadService
     @ObservationIgnored private let lockService: any BiometricLockService
     @ObservationIgnored private let errorCenter: KodaErrorCenter
     @ObservationIgnored private let loggerService: any LoggerService
@@ -46,6 +47,7 @@ final class AppLifecycleCoordinator {
         syncScheduler: any SyncScheduling,
         widgetMenu: any WidgetMenuService,
         intentIndexing: any IntentIndexing,
+        imageUploads: any RecipeImageUploadService,
         lockService: any BiometricLockService,
         errorCenter: KodaErrorCenter,
         loggerService: any LoggerService,
@@ -60,6 +62,7 @@ final class AppLifecycleCoordinator {
         self.syncScheduler = syncScheduler
         self.widgetMenu = widgetMenu
         self.intentIndexing = intentIndexing
+        self.imageUploads = imageUploads
         self.lockService = lockService
         self.errorCenter = errorCenter
         self.loggerService = loggerService
@@ -99,6 +102,7 @@ final class AppLifecycleCoordinator {
         await lockService.applicationWillEnterForeground()
         // After a day change the widgets' menu starts again from the new today.
         await widgetMenu.start()
+        await imageUploads.start()
         await syncScheduler.requestSync(.foreground)
     }
 
@@ -136,9 +140,10 @@ final class AppLifecycleCoordinator {
             router.popToRoot(in: tab)
         }
         sessionState = .signedOut
-        Task { [widgetMenu, intentIndexing] in
+        Task { [widgetMenu, intentIndexing, imageUploads] in
             await widgetMenu.stopAndClear()
             await intentIndexing.stopAndClear()
+            await imageUploads.stopAndClear()
         }
     }
 
@@ -190,6 +195,7 @@ final class AppLifecycleCoordinator {
         await syncScheduler.start()
         await widgetMenu.start()
         await intentIndexing.start()
+        await imageUploads.start()
         await syncScheduler.requestSync(trigger)
         registerForRemoteNotifications()
     }

@@ -9,6 +9,7 @@ extension AppDatabase {
         migrator.registerMigration("v1_synced_tables", migrate: SchemaV1.syncedTables)
         migrator.registerMigration("v1_sync_bookkeeping", migrate: SchemaV1.syncBookkeeping)
         migrator.registerMigration("v2_meals_shopping_status_frozen", migrate: SchemaV2.migrate)
+        migrator.registerMigration("v3_recipe_images", migrate: SchemaV3.migrate)
         return migrator
     }
 }
@@ -259,6 +260,40 @@ private enum SchemaV2 {
             table.column("deleted_at", .text)
             table.column("client_updated_at", .text)
             table.column("server_seq", .integer)
+        }
+    }
+}
+
+/// Recipe images (PLAN.md phase 6b, backend migration `…12`): the cover's source, the `recipe_photos` gallery and
+/// the local-only queue of image files waiting to be uploaded to Storage.
+private enum SchemaV3 {
+    static func migrate(_ db: Database) throws {
+        try db.alter(table: "recipes") { table in
+            table.add(column: "image_source", .text)
+        }
+
+        try db.create(table: "recipe_photos") { table in
+            table.primaryKey("id", .text)
+            table.column("household_id", .text).notNull()
+            table.column("recipe_id", .text).notNull().indexed()
+            table.column("storage_path", .text).notNull()
+            table.column("width", .integer)
+            table.column("height", .integer)
+            table.column("position", .integer).notNull().defaults(to: 0)
+            table.column("created_at", .text)
+            table.column("updated_at", .text)
+            table.column("updated_by", .text)
+            table.column("deleted_at", .text)
+            table.column("client_updated_at", .text)
+            table.column("server_seq", .integer)
+        }
+
+        // Not synced: images taken on this device that Storage does not have yet.
+        try db.create(table: "pending_image_uploads") { table in
+            table.primaryKey("storage_path", .text)
+            table.column("created_at", .text).notNull()
+            table.column("attempts", .integer).notNull().defaults(to: 0)
+            table.column("last_error", .text)
         }
     }
 }

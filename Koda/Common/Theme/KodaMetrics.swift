@@ -61,6 +61,10 @@ enum KodaSize {
     static let slotLabelWidth: CGFloat = 76
     static let formWidth: CGFloat = 480
     static let loginArcsWidth: CGFloat = 420
+    /// Recipe detail hero (cover photo or arcs).
+    static let recipeHeroHeight: CGFloat = 340
+    /// Square thumbnails of the "Fotos" strip.
+    static let photoThumbnail: CGFloat = 96
     /// Readable column on the Mac.
     static let readableWidth: CGFloat = 760
 }

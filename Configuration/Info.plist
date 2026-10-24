@@ -36,6 +36,8 @@
 	<false/>
 	<key>KEYCHAIN_ACCESS_GROUP</key>
 	<string>$(KEYCHAIN_ACCESS_GROUP)</string>
+	<key>NSCameraUsageDescription</key>
+	<string>Koda usa la cámara para que hagas fotos de tus recetas.</string>
 	<key>NSFaceIDUsageDescription</key>
 	<string>Koda usa Face ID para que entres sin escribir la contraseña.</string>
 	<key>SUPABASE_PUBLISHABLE_KEY</key>

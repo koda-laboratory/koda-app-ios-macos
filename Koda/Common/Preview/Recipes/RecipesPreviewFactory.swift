@@ -40,7 +40,29 @@ enum RecipesPreviewFactory {
         steps: ["Poner el agua a hervir.", "Hacer los huevos."],
         notes: nil,
         imagePath: nil,
+        imageSource: nil,
         emoji: nil,
         isFavorite: true
     )
+
+    static let recipeWithCover = Recipe(
+        id: PreviewDatabase.uuid(205),
+        name: "Tortilla de patata",
+        mealTypes: [.dinner],
+        nutrients: [.protein],
+        timeMinutes: 45,
+        servings: 2,
+        steps: [],
+        notes: nil,
+        imagePath: "preview/tortilla/cover.jpg",
+        imageSource: .photo,
+        emoji: nil,
+        isFavorite: false
+    )
+
+    static let gallery = [
+        RecipeGalleryItem(path: "preview/tortilla/cover.jpg", photoID: PreviewDatabase.uuid(301), isCover: true),
+        RecipeGalleryItem(path: "preview/tortilla/2.jpg", photoID: PreviewDatabase.uuid(302), isCover: false),
+        RecipeGalleryItem(path: "preview/tortilla/3.jpg", photoID: PreviewDatabase.uuid(303), isCover: false),
+    ]
 }

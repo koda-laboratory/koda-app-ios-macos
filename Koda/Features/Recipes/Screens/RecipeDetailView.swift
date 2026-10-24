@@ -41,6 +41,17 @@ struct RecipeDetailView: View {
                     }
                     .symbolEffect(.bounce, value: recipe.isFavorite)
                     .accessibilityIdentifier("recipe-favorite")
+                    if PlatformIdiom.current == .mac {
+                        Button {
+                            Task { await viewModel.send(.addPhotoTapped) }
+                        } label: {
+                            Label(
+                                recipe.imagePath == nil ? "recipe.photos.add-cover" : "recipe.photos.add-photo-menu",
+                                systemImage: "photo.badge.plus"
+                            )
+                        }
+                        .accessibilityIdentifier("recipe-add-photo-toolbar")
+                    }
                     Button {
                         Task { await viewModel.send(.edit) }
                     } label: {
@@ -61,7 +72,24 @@ struct RecipeDetailView: View {
                 RecipeEditorSheet(
                     viewModel: Assembly.makeRecipeEditorViewModel(recipeID: viewModel.recipeID, container: container)
                 )
+            case .addPhoto(let asCover):
+                AddRecipePhotoSheet(
+                    recipeName: viewModel.detail?.recipe.name ?? "",
+                    asCover: asCover,
+                    onPick: { data, asCover in Task { await viewModel.send(.addPhoto(data, asCover: asCover)) } },
+                    onCancel: { Task { await viewModel.send(.dismissSheet) } }
+                )
             }
+        }
+        .platformFullScreenCover(item: $viewModel.presentedViewer) { request in
+            RecipePhotoViewer(
+                recipeName: viewModel.detail?.recipe.name ?? "",
+                gallery: viewModel.detail?.gallery ?? [],
+                initialPath: request.initialPath,
+                onSetCover: { item in Task { await viewModel.send(.setCover(item)) } },
+                onDelete: { item in Task { await viewModel.send(.deletePhoto(item)) } },
+                onClose: { Task { await viewModel.send(.dismissViewer) } }
+            )
         }
         .task { await viewModel.send(.appeared) }
     }
@@ -69,7 +97,9 @@ struct RecipeDetailView: View {
     private func content(_ detail: RecipeDetail) -> some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 0) {
-                RecipeHero(recipe: detail.recipe)
+                RecipeHero(recipe: detail.recipe) {
+                    Task { await viewModel.send(.addPhotoTapped) }
+                }
                 VStack(alignment: .leading, spacing: KodaSpacing.l - 2) {
                     HStack(spacing: KodaSpacing.xs) {
                         StatPill(value: "\(viewModel.stats.timesEaten)", captionKey: "recipe.stats.times")
@@ -80,6 +110,17 @@ struct RecipeDetailView: View {
                         )
                     }
                     RecipeActions(viewModel: viewModel)
+                    RecipePhotosSection(
+                        gallery: detail.gallery,
+                        isSaving: viewModel.photoSaveState == .saving,
+                        onAdd: { Task { await viewModel.send(.addPhotoTapped) } },
+                        onOpen: { item in Task { await viewModel.send(.openPhoto(item)) } },
+                        onSetCover: { item in Task { await viewModel.send(.setCover(item)) } },
+                        onDelete: { item in Task { await viewModel.send(.deletePhoto(item)) } },
+                        onDrop: { data in
+                            Task { await viewModel.send(.addPhoto(data, asCover: detail.recipe.imagePath == nil)) }
+                        }
+                    )
                     RecipeIngredientsSection(detail: detail)
                     RecipeNotesEditor(
                         text: viewModel.notes,

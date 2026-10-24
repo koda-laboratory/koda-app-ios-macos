@@ -7,6 +7,8 @@ enum SyncedTable: String, CaseIterable, Sendable, Codable {
     case recipes
     case recipeIngredients = "recipe_ingredients"
     case recipeComponents = "recipe_components"
+    /// The gallery of a recipe; the image bytes live in Supabase Storage (`recipe-images`).
+    case recipePhotos = "recipe_photos"
     case mealPlanDrafts = "meal_plan_drafts"
     case mealPlanEntries = "meal_plan_entries"
     case consumptions
@@ -65,12 +67,13 @@ enum SyncedTable: String, CaseIterable, Sendable, Codable {
             [
                 (.recipeIngredients, "recipe_id"), (.recipeComponents, "parent_recipe_id"),
                 (.recipeComponents, "child_recipe_id"), (.mealPlanEntries, "recipe_id"), (.consumptions, "recipe_id"),
+                (.recipePhotos, "recipe_id"),
             ]
         case .mealPlanDrafts:
             [(.mealPlanEntries, "draft_id")]
         case .shoppingEntries:
             [(.shoppingEntryItems, "entry_id")]
-        case .productStores, .recipeIngredients, .recipeComponents, .mealPlanEntries, .consumptions,
+        case .productStores, .recipeIngredients, .recipeComponents, .recipePhotos, .mealPlanEntries, .consumptions,
             .shoppingEntryItems, .frozenItems:
             []
         }

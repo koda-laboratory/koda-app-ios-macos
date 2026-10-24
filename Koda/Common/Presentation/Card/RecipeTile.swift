@@ -2,22 +2,23 @@ import SwiftUI
 
 // MARK: - Recipe Tile
 
-/// Recipe grid tile: a colour block with the recipe initials (there are no photos yet), the name and a detail.
+/// Recipe grid tile: the cover photo, or a colour block with the recipe initials when there is none, the name and a
+/// detail.
 struct RecipeTile: View {
     let recipeID: UUID
     let name: String
     let detail: String
+    var imagePath: String?
 
     var body: some View {
         VStack(alignment: .leading, spacing: KodaSpacing.xs) {
-            let palette = RecipeTilePalette(id: recipeID)
-            Text(verbatim: RecipeTilePalette.initials(of: name))
-                .font(KodaTypography.initials)
-                .foregroundStyle(palette.foreground)
-                .padding(KodaSpacing.s)
-                .frame(maxWidth: .infinity, minHeight: KodaSize.recipeTileHeight, alignment: .bottomLeading)
-                .background(palette.background, in: RoundedRectangle(cornerRadius: KodaRadius.card, style: .continuous))
-                .accessibilityHidden(true)
+            RecipeImageView(path: imagePath, maxPixelSize: 500) {
+                InitialsBlock(recipeID: recipeID, name: name)
+            }
+            .frame(maxWidth: .infinity)
+            .frame(height: KodaSize.recipeTileHeight)
+            .clipShape(RoundedRectangle(cornerRadius: KodaRadius.card, style: .continuous))
+            .accessibilityHidden(true)
             Text(verbatim: name)
                 .font(KodaTypography.subheadline.weight(.bold))
                 .foregroundStyle(KodaColor.textPrimary)
@@ -30,6 +31,22 @@ struct RecipeTile: View {
             }
         }
         .accessibilityElement(children: .combine)
+    }
+}
+
+/// The recipe initials on its deterministic colour block.
+private struct InitialsBlock: View {
+    let recipeID: UUID
+    let name: String
+
+    var body: some View {
+        let palette = RecipeTilePalette(id: recipeID)
+        Text(verbatim: RecipeTilePalette.initials(of: name))
+            .font(KodaTypography.initials)
+            .foregroundStyle(palette.foreground)
+            .padding(KodaSpacing.s)
+            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottomLeading)
+            .background(palette.background)
     }
 }
 

@@ -4,6 +4,11 @@ import SwiftUI
 struct KodaRootView: View {
     let coordinator: AppLifecycleCoordinator
 
+    /// One loader (and memory cache) for the whole app.
+    private static let imageLoader = RecipeImageLoader.live(
+        useCase: DependencyContainer.shared.required(LoadRecipeImageUseCase.self)
+    )
+
     var body: some View {
         ZStack {
             switch coordinator.sessionState {
@@ -22,6 +27,7 @@ struct KodaRootView: View {
         }
         .environment(coordinator)
         .environment(coordinator.router)
+        .environment(\.recipeImageLoader, Self.imageLoader)
         .tint(KodaColor.brandText)
         .kodaAppearance()
         .onOpenURL { coordinator.open(url: $0) }

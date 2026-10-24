@@ -26,6 +26,7 @@ enum KodaTypography {
     static let body = Font.body
     static let callout = Font.callout
     static let caption = Font.caption
+    static let caption2 = Font.caption2
     static let emoji = Font.system(size: 56)
 }
 

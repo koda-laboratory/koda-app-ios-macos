@@ -82,6 +82,7 @@ final class AppDatabase: Sendable {
                 try db.execute(sql: "DELETE FROM \(table.rawValue)")
             }
             try db.execute(sql: "DELETE FROM outbox")
+            try db.execute(sql: "DELETE FROM pending_image_uploads")
             try db.execute(sql: "DELETE FROM me_members")
             try db.execute(sql: "DELETE FROM me_households")
             try db.execute(sql: "DELETE FROM me_profile")

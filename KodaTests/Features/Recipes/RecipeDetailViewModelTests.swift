@@ -50,7 +50,10 @@ struct RecipeDetailViewModelTests {
                 observeStats: ObserveRecipeStatsUseCaseImpl(repository: environment.recipes),
                 setFavorite: SetRecipeFavoriteUseCaseImpl(repository: environment.recipes),
                 updateNotes: notes,
-                addRecipeToShoppingList: environment.addRecipeToShopping
+                addRecipeToShoppingList: environment.addRecipeToShopping,
+                addPhoto: environment.addPhoto,
+                setCover: environment.setCover,
+                deletePhoto: environment.deletePhoto
             ),
             sleep: { _ in await sleeper.sleep() },
             clock: { TestClock.now }

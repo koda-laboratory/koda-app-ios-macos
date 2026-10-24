@@ -12,6 +12,27 @@ extension Assembly {
             }
             .inObjectScope(.container)
 
+            container.register(RecipePhotoRepository.self) { resolver in
+                RecipePhotoRepositoryImpl(
+                    database: resolver.required(AppDatabase.self),
+                    writer: resolver.required(LocalMutationWriter.self),
+                    fileDataSource: resolver.required(RecipeImageFileDataSource.self)
+                )
+            }
+            .inObjectScope(.container)
+            container.register(AddRecipePhotoUseCase.self) { resolver in
+                AddRecipePhotoUseCaseImpl(
+                    repository: resolver.required(RecipePhotoRepository.self),
+                    transcoder: ImageIOTranscoder()
+                )
+            }
+            container.register(SetRecipeCoverUseCase.self) { resolver in
+                SetRecipeCoverUseCaseImpl(repository: resolver.required(RecipePhotoRepository.self))
+            }
+            container.register(DeleteRecipePhotoUseCase.self) { resolver in
+                DeleteRecipePhotoUseCaseImpl(repository: resolver.required(RecipePhotoRepository.self))
+            }
+
             container.register(RecipeExpansionService.self) { _ in RecipeExpansionServiceImpl() }
                 .inObjectScope(.container)
 
@@ -82,7 +103,10 @@ extension Assembly {
                 observeStats: container.required(ObserveRecipeStatsUseCase.self),
                 setFavorite: container.required(SetRecipeFavoriteUseCase.self),
                 updateNotes: container.required(UpdateRecipeNotesUseCase.self),
-                addRecipeToShoppingList: container.required(AddRecipeToShoppingListUseCase.self)
+                addRecipeToShoppingList: container.required(AddRecipeToShoppingListUseCase.self),
+                addPhoto: container.required(AddRecipePhotoUseCase.self),
+                setCover: container.required(SetRecipeCoverUseCase.self),
+                deletePhoto: container.required(DeleteRecipePhotoUseCase.self)
             )
         )
     }

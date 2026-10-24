@@ -11,6 +11,46 @@ extension Assembly {
             registerDevice(in: container)
             registerLock(in: container)
             registerNotifications(in: container)
+            registerImages(in: container)
+        }
+
+        private func registerImages(in container: Container) {
+            container.register(RecipeImageFileDataSource.self) { _ in AppGroupRecipeImageFileDataSource() }
+                .inObjectScope(.container)
+
+            container.register(RecipeImageRemoteDataSource.self) { resolver in
+                RecipeImageRemoteDataSourceImpl(
+                    httpService: resolver.required(HTTPService.self),
+                    headerProvider: resolver.required(
+                        HTTPHeaderProvider.self,
+                        name: Assembly.supabaseHeaderProviderName
+                    )
+                )
+            }
+            .inObjectScope(.container)
+
+            container.register(RecipeImageRepository.self) { resolver in
+                RecipeImageRepositoryImpl(
+                    database: resolver.required(AppDatabase.self),
+                    fileDataSource: resolver.required(RecipeImageFileDataSource.self),
+                    remoteDataSource: resolver.required(RecipeImageRemoteDataSource.self)
+                )
+            }
+            .inObjectScope(.container)
+
+            container.register(RecipeImageUploadService.self) { resolver in
+                RecipeImageUploadServiceImpl(
+                    repository: resolver.required(RecipeImageRepository.self),
+                    reachability: NetworkPathReachability(),
+                    loggerService: resolver.required(LoggerService.self)
+                )
+            }
+            .inObjectScope(.container)
+
+            container.register(LoadRecipeImageUseCase.self) { resolver in
+                LoadRecipeImageUseCaseImpl(repository: resolver.required(RecipeImageRepository.self))
+            }
+            .inObjectScope(.container)
         }
 
         private func registerNotifications(in container: Container) {

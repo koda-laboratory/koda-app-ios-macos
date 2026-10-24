@@ -17,6 +17,7 @@ extension Assembly {
                 observeProducts: container.required(ObserveProductsUseCase.self),
                 loggerService: container.required(LoggerService.self)
             ),
+            imageUploads: container.required(RecipeImageUploadService.self),
             lockService: container.required(BiometricLockService.self),
             errorCenter: container.required(KodaErrorCenter.self),
             loggerService: container.required(LoggerService.self),

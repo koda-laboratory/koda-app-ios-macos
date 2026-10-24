@@ -68,6 +68,19 @@ enum KodaGradient {
         startPoint: .top,
         endPoint: .bottom
     )
+
+    /// Over a recipe photo: a light shade under the toolbar and a deep one under the title, so cream text stays
+    /// readable on any image.
+    static let photoScrim = LinearGradient(
+        stops: [
+            .init(color: KodaColor.onyx.opacity(0.35), location: 0),
+            .init(color: KodaColor.onyx.opacity(0), location: 0.3),
+            .init(color: KodaColor.onyx.opacity(0), location: 0.48),
+            .init(color: KodaColor.onyx.opacity(0.82), location: 1),
+        ],
+        startPoint: .top,
+        endPoint: .bottom
+    )
 }
 
 // MARK: - Previews

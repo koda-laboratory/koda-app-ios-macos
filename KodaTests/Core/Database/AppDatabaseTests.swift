@@ -13,9 +13,12 @@ struct AppDatabaseTests {
             .stores: ["name", "color"],
             .products: ["category", "default_unit", "price_per_kg", "price_total", "servings", "servings_per_week"],
             .productStores: ["product_id", "store_id"],
-            .recipes: ["meal_types", "nutrients", "time_minutes", "steps", "image_path", "is_favorite"],
+            .recipes: [
+                "meal_types", "nutrients", "time_minutes", "steps", "image_path", "image_source", "is_favorite",
+            ],
             .recipeIngredients: ["recipe_id", "product_id", "quantity", "unit", "position"],
             .recipeComponents: ["parent_recipe_id", "child_recipe_id", "servings_factor"],
+            .recipePhotos: ["recipe_id", "storage_path", "width", "height", "position"],
             .mealPlanDrafts: ["from_date", "to_date", "status", "source", "rationale", "created_by"],
             .mealPlanEntries: ["date", "slot", "recipe_id", "free_text", "draft_id"],
             .consumptions: ["eaten_on", "slot", "meal_plan_entry_id", "logged_by"],

@@ -12,6 +12,8 @@ struct FeatureEnvironment {
     let shopping: ShoppingRepositoryImpl
     let products: ProductRepositoryImpl
     let meRepository: MeRepositoryImpl
+    let imageFiles = InMemoryRecipeImageFiles()
+    let photos: RecipePhotoRepositoryImpl
     let expansion = RecipeExpansionServiceImpl()
     let syncScheduler = RecordingSyncScheduler()
 
@@ -30,6 +32,7 @@ struct FeatureEnvironment {
         shopping = ShoppingRepositoryImpl(database: database, writer: writer)
         products = ProductRepositoryImpl(database: database, writer: writer)
         meRepository = MeRepositoryImpl(remoteDataSource: meRemote, database: database)
+        photos = RecipePhotoRepositoryImpl(database: database, writer: writer, fileDataSource: imageFiles)
     }
 
     // MARK: - Use cases
@@ -40,6 +43,11 @@ struct FeatureEnvironment {
     var observeFrozenItems: any ObserveFrozenItemsUseCase { ObserveFrozenItemsUseCaseImpl(repository: shopping) }
     var observeProducts: any ObserveProductsUseCase { ObserveProductsUseCaseImpl(repository: products) }
     var observeStores: any ObserveStoresUseCase { ObserveStoresUseCaseImpl(repository: products) }
+    var addPhoto: any AddRecipePhotoUseCase {
+        AddRecipePhotoUseCaseImpl(repository: photos, transcoder: ImageIOTranscoder())
+    }
+    var setCover: any SetRecipeCoverUseCase { SetRecipeCoverUseCaseImpl(repository: photos) }
+    var deletePhoto: any DeleteRecipePhotoUseCase { DeleteRecipePhotoUseCaseImpl(repository: photos) }
     var planMeal: any PlanMealUseCase { PlanMealUseCaseImpl(repository: planning) }
     var addRecipeToShopping: any AddRecipeToShoppingListUseCase {
         AddRecipeToShoppingListUseCaseImpl(

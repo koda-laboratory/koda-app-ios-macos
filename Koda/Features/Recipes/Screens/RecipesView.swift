@@ -77,7 +77,12 @@ struct RecipesView: View {
                     ) {
                         ForEach(viewModel.filtered) { item in
                             NavigationLink(value: AppRoute.recipe(id: item.id)) {
-                                RecipeTile(recipeID: item.id, name: item.recipe.name, detail: detail(item))
+                                RecipeTile(
+                                    recipeID: item.id,
+                                    name: item.recipe.name,
+                                    detail: detail(item),
+                                    imagePath: item.recipe.imagePath
+                                )
                             }
                             .buttonStyle(.plain)
                             .accessibilityIdentifier("recipe-tile-\(item.id)")

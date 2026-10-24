@@ -207,7 +207,12 @@ final class RecipeRepositoryImpl: RecipeRepository, Sendable {
             )
         }
 
-        return RecipeDetail(recipe: recipe, ingredients: ingredients, components: components)
+        let photos = try RecipePhotoRecord.live()
+            .filter(Column("recipe_id") == recipeID)
+            .order(Column("position"), Column("created_at"))
+            .fetchAll(db)
+            .compactMap(RecipePhoto.init(record:))
+        return RecipeDetail(recipe: recipe, ingredients: ingredients, components: components, photos: photos)
     }
 
     @Sendable
@@ -433,6 +438,7 @@ extension Recipe {
             steps: Self.strings(record.steps),
             notes: record.notes,
             imagePath: record.imagePath,
+            imageSource: record.imageSource.flatMap(RecipeImageSource.init(rawValue:)),
             emoji: record.emoji,
             isFavorite: record.isFavorite
         )
@@ -442,6 +448,20 @@ extension Recipe {
     private static func strings(_ jsonText: String) -> [String] {
         guard case .array(let values) = try? JSONValue.parse(jsonText: jsonText) else { return [] }
         return values.compactMap(\.stringValue)
+    }
+}
+
+extension RecipePhoto {
+    init?(record: RecipePhotoRecord) {
+        guard let id = UUID(uuidString: record.id), let recipeID = UUID(uuidString: record.recipeId) else { return nil }
+        self.init(
+            id: id,
+            recipeID: recipeID,
+            storagePath: record.storagePath,
+            width: record.width,
+            height: record.height,
+            position: record.position
+        )
     }
 }
 
@@ -458,6 +478,7 @@ extension RecipeRecord {
             steps: "[]",
             notes: nil,
             imagePath: nil,
+            imageSource: nil,
             emoji: nil,
             isFavorite: false,
             createdAt: nil,
