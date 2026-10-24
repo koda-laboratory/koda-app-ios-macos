@@ -39,6 +39,7 @@ struct ShoppingRecipeEntryCard: View {
                         .font(.body.weight(.bold))
                         .foregroundStyle(KodaColor.brandText)
                         .rotationEffect(.degrees(isExpanded ? 180 : 0))
+                        .accessibilityHidden(true)
                 }
                 .padding(.horizontal, KodaSpacing.m)
                 .padding(.vertical, KodaSpacing.s + 2)
@@ -49,6 +50,11 @@ struct ShoppingRecipeEntryCard: View {
             .contextMenu {
                 if let onRemove {
                     Button("shopping.remove", systemImage: "trash", role: .destructive, action: onRemove)
+                }
+            }
+            .accessibilityActions {
+                if let onRemove {
+                    Button("shopping.remove", action: onRemove)
                 }
             }
 
@@ -72,7 +78,7 @@ struct ShoppingRecipeEntryCard: View {
         }
         .background(KodaColor.surface, in: RoundedRectangle(cornerRadius: KodaRadius.card, style: .continuous))
         .clipShape(RoundedRectangle(cornerRadius: KodaRadius.card, style: .continuous))
-        .animation(.easeInOut(duration: 0.2), value: isExpanded)
+        .kodaAnimation(KodaMotion.disclosure, value: isExpanded)
     }
 }
 
@@ -104,6 +110,11 @@ struct ShoppingCycleCard: View {
             .padding(.horizontal, KodaSpacing.s + 2)
             .padding(.vertical, KodaSpacing.s)
             .background(KodaColor.onyx, in: RoundedRectangle(cornerRadius: KodaRadius.tile, style: .continuous))
+            // Onyx on the onyx dark background needs an edge.
+            .overlay {
+                RoundedRectangle(cornerRadius: KodaRadius.tile, style: .continuous).strokeBorder(KodaColor.separator)
+            }
+            .kodaHoverHighlight(cornerRadius: KodaRadius.tile)
             .contentShape(RoundedRectangle(cornerRadius: KodaRadius.tile))
         }
         .buttonStyle(.plain)

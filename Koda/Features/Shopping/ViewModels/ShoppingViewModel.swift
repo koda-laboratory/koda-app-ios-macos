@@ -77,6 +77,7 @@ final class ShoppingViewModel: MVIViewModel {
     var quickAddText = ""
     var presentedSheet: ShoppingSheet?
     var toast: Toast?
+    private(set) var feedback: FeedbackEvent?
 
     @ObservationIgnored private let useCases: UseCases
     @ObservationIgnored private let clock: @Sendable () -> Date
@@ -248,6 +249,7 @@ final class ShoppingViewModel: MVIViewModel {
                 try await useCases.addShoppingEntry.execute(NewShoppingEntry(item: .text(text)))
             }
             quickAddText = ""
+            feedback = FeedbackEvent(.added)
         } catch {
             toast = .error(error)
         }
@@ -257,6 +259,7 @@ final class ShoppingViewModel: MVIViewModel {
         guard case .entry(let id) = row.source else { return }
         do {
             try await useCases.removeEntry.execute(entryID: id)
+            feedback = FeedbackEvent(.removed)
         } catch {
             toast = .error(error)
         }
@@ -265,6 +268,7 @@ final class ShoppingViewModel: MVIViewModel {
     private func clearHave() async {
         do {
             try await useCases.clearHave.execute()
+            feedback = FeedbackEvent(.removed)
         } catch {
             toast = .error(error)
         }

@@ -71,6 +71,9 @@ struct GenerateShoppingSheet: View {
         .presentationDetents([.large])
         .platformSheetSize(width: 560, height: 720)
         .task { await viewModel.send(.appeared) }
+        .platformHaptic(.success, trigger: viewModel.state) { _, state in
+            if case .completed = state { true } else { false }
+        }
         .onChange(of: viewModel.state) {
             if case .completed = viewModel.state { dismiss() }
         }
@@ -202,6 +205,7 @@ private struct CandidateRow: View {
         }
         .buttonStyle(.plain)
         .disabled(candidate.isAlreadyOnList)
+        .platformHaptic(.selection, trigger: isSelected)
         .accessibilityAddTraits(isSelected ? .isSelected : [])
         .accessibilityIdentifier("generate-candidate-\(candidate.id)")
     }

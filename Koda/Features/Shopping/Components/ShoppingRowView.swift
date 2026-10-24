@@ -28,7 +28,7 @@ struct ShoppingStatusDot: View {
             }
         }
         .frame(width: size, height: size)
-        .animation(.spring(duration: 0.3), value: status)
+        .kodaAnimation(.spring(duration: 0.3), value: status)
         .accessibilityHidden(true)
     }
 
@@ -76,7 +76,7 @@ struct ShoppingRowView: View {
                 .contentShape(Rectangle())
             }
             .buttonStyle(.plain)
-            .sensoryFeedback(.selection, trigger: row.status)
+            .platformHaptic(.selection, trigger: row.status)
             .accessibilityLabel(Text(verbatim: row.title))
             .accessibilityValue(Text(statusKey))
             .accessibilityHint(Text("shopping.row.hint"))

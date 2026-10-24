@@ -7,6 +7,7 @@ struct ShoppingView: View {
     @Environment(\.locale) private var locale
     @FocusState private var isQuickAddFocused: Bool
     @State private var isSharedExpanded = true
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     init(viewModel: ShoppingViewModel) {
         _viewModel = State(initialValue: viewModel)
@@ -44,7 +45,11 @@ struct ShoppingView: View {
                         isExpanded: isSharedExpanded,
                         rows: layout.sharedRows,
                         showsRecipes: true,
-                        onToggleExpanded: { withAnimation { isSharedExpanded.toggle() } },
+                        onToggleExpanded: {
+                            withAnimation(KodaMotion.animation(KodaMotion.disclosure, reduceMotion: reduceMotion)) {
+                                isSharedExpanded.toggle()
+                            }
+                        },
                         onToggleHave: { row in Task { await viewModel.send(.toggleHave(row)) } },
                         onToggleFrozen: { row in Task { await viewModel.send(.toggleFrozen(row)) } }
                     )
@@ -109,8 +114,11 @@ struct ShoppingView: View {
             .padding(.bottom, KodaSpacing.xl * 3)
             .frame(maxWidth: KodaSize.readableWidth)
             .frame(maxWidth: .infinity)
+            // A checked product slides into "Ya lo tenemos"; added and removed rows fade in and out.
+            .kodaAnimation(value: layout)
         }
         .background(KodaColor.background)
+        .feedbackHaptic(viewModel.feedback)
         .navigationTitle(Text("tab.shopping"))
         .platformHidesNavigationBar()
         .dismissKeyboard()
@@ -306,14 +314,17 @@ private struct ShoppingFrozenSection: View {
                                 .foregroundStyle(KodaColor.taupe)
                         }
                         Spacer(minLength: 0)
-                        Button("shopping.frozen.remove") {
+                        Button {
                             Task { await viewModel.send(.toggleFrozen(row)) }
+                        } label: {
+                            Text("shopping.frozen.remove")
+                                .font(KodaTypography.caption.weight(.semibold))
+                                .foregroundStyle(KodaColor.cream)
+                                .padding(.horizontal, KodaSpacing.s)
+                                .frame(minHeight: KodaSize.chipHeight - 2)
+                                .overlay { Capsule().strokeBorder(KodaColor.taupe.opacity(0.4)) }
+                                .kodaHitTarget()
                         }
-                        .font(KodaTypography.caption.weight(.semibold))
-                        .foregroundStyle(KodaColor.cream)
-                        .padding(.horizontal, KodaSpacing.s)
-                        .frame(minHeight: KodaSize.chipHeight - 2)
-                        .overlay { Capsule().strokeBorder(KodaColor.taupe.opacity(0.4)) }
                         .buttonStyle(.plain)
                         .accessibilityIdentifier("frozen-remove-\(row.id)")
                     }
@@ -327,6 +338,10 @@ private struct ShoppingFrozenSection: View {
                 }
             }
             .background(KodaColor.onyx, in: RoundedRectangle(cornerRadius: KodaRadius.card, style: .continuous))
+            // Onyx on the onyx dark background needs an edge.
+            .overlay {
+                RoundedRectangle(cornerRadius: KodaRadius.card, style: .continuous).strokeBorder(KodaColor.separator)
+            }
         }
     }
 
