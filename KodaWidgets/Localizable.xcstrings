@@ -1,6 +1,40 @@
 {
   "sourceLanguage": "en",
   "strings": {
+    "widget.control.add-shopping": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Add to shopping"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Añadir a la compra"
+          }
+        }
+      }
+    },
+    "widget.control.add-shopping.description": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Opens Koda ready to add to the shopping list."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Abre Koda listo para apuntar en la compra."
+          }
+        }
+      }
+    },
     "widget.description": {
       "extractionState": "manual",
       "localizations": {
@@ -48,6 +82,74 @@
           "stringUnit": {
             "state": "translated",
             "value": "Nada planificado"
+          }
+        }
+      }
+    },
+    "widget.shopping.description": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "What's left to buy. Tap to open the list."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Lo que falta por comprar. Tócalo para abrir la lista."
+          }
+        }
+      }
+    },
+    "widget.shopping.done": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nothing left to buy"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No falta nada"
+          }
+        }
+      }
+    },
+    "widget.shopping.name": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Shopping list"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Lista de la compra"
+          }
+        }
+      }
+    },
+    "widget.shopping.title": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Shopping"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Compra"
           }
         }
       }

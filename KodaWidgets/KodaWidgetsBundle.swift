@@ -5,5 +5,7 @@ import WidgetKit
 struct KodaWidgetsBundle: WidgetBundle {
     var body: some Widget {
         TodayWidget()
+        ShoppingWidget()
+        AddToShoppingControl()
     }
 }

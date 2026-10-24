@@ -27,6 +27,7 @@ extension Assembly {
             container.register(WidgetMenuService.self) { resolver in
                 WidgetMenuServiceImpl(
                     planningRepository: resolver.required(PlanningRepository.self),
+                    shoppingRepository: resolver.required(ShoppingRepository.self),
                     meRepository: resolver.required(MeRepository.self),
                     widgetMenuRepository: resolver.required(WidgetMenuRepository.self)
                 )

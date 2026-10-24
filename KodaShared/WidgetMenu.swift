@@ -25,14 +25,26 @@ struct WidgetMenu: Codable, Sendable, Equatable {
         let meals: [Meal]
     }
 
+    /// What is left to buy, for the "Compra" widget.
+    struct Shopping: Codable, Sendable, Equatable {
+        /// Every pending product, counting each one of a recipe entry.
+        let pendingCount: Int
+        /// The first pending products, in list order ("Leche", "Huevos").
+        let items: [String]
+    }
+
     let timeZoneIdentifier: String
     /// From today onwards, so the widget keeps working for days without the app being opened.
     let days: [Day]
+    /// `nil` in snapshots written before the shopping widget existed.
+    var shopping: Shopping?
 
     /// `group.com.kodalabs.app`.
     static let appGroup = "group.com.kodalabs.app"
     /// The widget kind of the "Hoy" widget.
     static let widgetKind = "TodayWidget"
+    /// The widget kind of the "Compra" widget.
+    static let shoppingWidgetKind = "ShoppingWidget"
     static let empty = WidgetMenu(timeZoneIdentifier: TimeZone.current.identifier, days: [])
 
     var timeZone: TimeZone { TimeZone(identifier: timeZoneIdentifier) ?? .current }

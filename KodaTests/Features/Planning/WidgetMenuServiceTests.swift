@@ -26,6 +26,7 @@ struct WidgetMenuServiceTests {
         let repository = RecordingWidgetMenuRepository()
         let service = WidgetMenuServiceImpl(
             planningRepository: environment.planning,
+            shoppingRepository: environment.shopping,
             meRepository: environment.meRepository,
             widgetMenuRepository: repository,
             clock: { TestClock.now }
