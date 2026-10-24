@@ -12,8 +12,26 @@
 	<array>
 		<string>$(BACKGROUND_SYNC_TASK_IDENTIFIER)</string>
 	</array>
+	<key>CFBundleURLTypes</key>
+	<array>
+		<dict>
+			<key>CFBundleURLName</key>
+			<string>com.kodalabs.app</string>
+			<key>CFBundleURLSchemes</key>
+			<array>
+				<string>koda</string>
+			</array>
+		</dict>
+	</array>
 	<key>HTTP_LOGGING_ENABLED</key>
 	<string>$(HTTP_LOGGING_ENABLED)</string>
+	<key>INAlternativeAppNames</key>
+	<array>
+		<dict>
+			<key>INAlternativeAppName</key>
+			<string>Comidita</string>
+		</dict>
+	</array>
 	<key>ITSAppUsesNonExemptEncryption</key>
 	<false/>
 	<key>KEYCHAIN_ACCESS_GROUP</key>

@@ -50,11 +50,12 @@ These apply on top of Apple's guidance whenever the intent lives in this reposit
   | `TodayMealsIntent` | Dialog + snippet with today's meal cards; optional `slot: MealSlotEnum` |
   | `AddToShoppingListIntent` | `item: String` (requested if missing) or `ProductEntity`; `source = 'siri'` |
   | `AddRecipeToShoppingListIntent` | `RecipeEntity` → one grouped shopping entry with expanded items |
-  | `LogMealIntent` | Creates a consumption for today |
   | `ShowShoppingListIntent` | Interactive snippet with toggles (`ToggleShoppingItemIntent`) |
   | `OpenRecipeIntent` | `OpenIntent` for Spotlight → `AppRoute.recipe(id:)` |
 
-- **Entities.** `RecipeEntity`, `ProductEntity`, and `MealPlanEntryEntity` are `IndexedEntity` with `EntityStringQuery`, backed by GRDB and reindexed after each sync pull. Their `id` is the row UUID (stable across devices).
+- **Dependencies.** Intents and queries use `@Dependency var services: IntentServices` (`Koda/Intents/IntentServices.swift`), registered in `KodaApp.init`. Foreground intents navigate through `IntentNavigator.shared.router`.
+- **Entities.** `RecipeEntity` (`IndexedEntity`) and `ProductEntity` use `EntityStringQuery` backed by the local use cases. `IntentIndexingService` reindexes recipes in Spotlight and refreshes App Shortcut parameters whenever the catalog changes, including pulled changes. Their `id` is the row UUID (stable across devices).
+- **Widgets.** Widget buttons run in the widget extension, which has no database: widgets only read the `WidgetMenu` snapshot and open the app (`koda://` deep links or `OpenURLIntent`).
 - **Phrases.** Spanish phrases, always including `\(.applicationName)` (for example "Apunta \(\.$product) en \(.applicationName)"), localized in the planned `Koda/Resources/AppShortcuts.xcstrings`; `INAlternativeAppNames` adds "Comidita". Siri free-form language is not available in the EU: phrases carry at most one entity or enum parameter.
 - **iOS/macOS 27.** Adopt the `.reminders` schema (`@AppIntent(schema: .reminders.createReminder)`) and `SyncableEntity` only behind `if #available(iOS 27, macOS 27, *)`, as progressive enhancement (see `app-intents-whats-new-27`).
 - **Validation.** Build for iPhone and Mac, run the intent from Shortcuts on both, and test the locked-iPhone and offline paths.

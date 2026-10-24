@@ -24,6 +24,7 @@ struct KodaRootView: View {
         .environment(coordinator.router)
         .tint(KodaColor.brandText)
         .kodaAppearance()
+        .onOpenURL { coordinator.open(url: $0) }
     }
 }
 

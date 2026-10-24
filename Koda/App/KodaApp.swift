@@ -11,6 +11,13 @@ struct KodaApp: App {
 
     @Environment(\.scenePhase) private var scenePhase
 
+    init() {
+        // Siri, Shortcuts and Spotlight can launch the process cold and run an intent before any view appears.
+        if !ProcessInfo.processInfo.skipsAppBootstrap {
+            IntentServices.register()
+        }
+    }
+
     var body: some Scene {
         WindowGroup {
             if let coordinator = appDelegate.coordinator {

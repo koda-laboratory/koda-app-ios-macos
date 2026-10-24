@@ -1,0 +1,136 @@
+{
+  "sourceLanguage": "en",
+  "strings": {
+    "Add ${product} in ${applicationName}": {
+      "extractionState": "manual",
+      "localizations": {
+        "es": {
+          "stringSet": {
+            "state": "translated",
+            "values": [
+              "Apunta ${product} en ${applicationName}"
+            ]
+          }
+        }
+      }
+    },
+    "Add ${product} to the shopping list in ${applicationName}": {
+      "extractionState": "manual",
+      "localizations": {
+        "es": {
+          "stringSet": {
+            "state": "translated",
+            "values": [
+              "Apunta ${product} en la lista de la compra de ${applicationName}"
+            ]
+          }
+        }
+      }
+    },
+    "Add a recipe to the shopping list in ${applicationName}": {
+      "extractionState": "manual",
+      "localizations": {
+        "es": {
+          "stringSet": {
+            "state": "translated",
+            "values": [
+              "Añade una receta a la compra en ${applicationName}"
+            ]
+          }
+        }
+      }
+    },
+    "Add the recipe ${recipe} to the shopping list in ${applicationName}": {
+      "extractionState": "manual",
+      "localizations": {
+        "es": {
+          "stringSet": {
+            "state": "translated",
+            "values": [
+              "Añade la receta ${recipe} a la compra en ${applicationName}"
+            ]
+          }
+        }
+      }
+    },
+    "Add to the shopping list in ${applicationName}": {
+      "extractionState": "manual",
+      "localizations": {
+        "es": {
+          "stringSet": {
+            "state": "translated",
+            "values": [
+              "Apunta en la lista de la compra de ${applicationName}"
+            ]
+          }
+        }
+      }
+    },
+    "Show the shopping list in ${applicationName}": {
+      "extractionState": "manual",
+      "localizations": {
+        "es": {
+          "stringSet": {
+            "state": "translated",
+            "values": [
+              "Enséñame la lista de la compra de ${applicationName}"
+            ]
+          }
+        }
+      }
+    },
+    "What do we eat today in ${applicationName}": {
+      "extractionState": "manual",
+      "localizations": {
+        "es": {
+          "stringSet": {
+            "state": "translated",
+            "values": [
+              "Qué comemos hoy en ${applicationName}"
+            ]
+          }
+        }
+      }
+    },
+    "What's for dinner today in ${applicationName}": {
+      "extractionState": "manual",
+      "localizations": {
+        "es": {
+          "stringSet": {
+            "state": "translated",
+            "values": [
+              "Qué cenamos hoy en ${applicationName}"
+            ]
+          }
+        }
+      }
+    },
+    "What's left to buy in ${applicationName}": {
+      "extractionState": "manual",
+      "localizations": {
+        "es": {
+          "stringSet": {
+            "state": "translated",
+            "values": [
+              "Qué falta por comprar en ${applicationName}"
+            ]
+          }
+        }
+      }
+    },
+    "What's on the menu today in ${applicationName}": {
+      "extractionState": "manual",
+      "localizations": {
+        "es": {
+          "stringSet": {
+            "state": "translated",
+            "values": [
+              "Qué hay hoy de comer en ${applicationName}"
+            ]
+          }
+        }
+      }
+    }
+  },
+  "version": "1.0"
+}

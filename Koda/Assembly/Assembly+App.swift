@@ -12,6 +12,11 @@ extension Assembly {
             registerDevice: container.required(RegisterDeviceUseCase.self),
             syncScheduler: container.required(SyncScheduling.self),
             widgetMenu: container.required(WidgetMenuService.self),
+            intentIndexing: IntentIndexingService(
+                observeRecipes: container.required(ObserveRecipeCatalogUseCase.self),
+                observeProducts: container.required(ObserveProductsUseCase.self),
+                loggerService: container.required(LoggerService.self)
+            ),
             lockService: container.required(BiometricLockService.self),
             errorCenter: container.required(KodaErrorCenter.self),
             loggerService: container.required(LoggerService.self),

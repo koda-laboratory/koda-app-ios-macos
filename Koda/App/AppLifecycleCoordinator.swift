@@ -27,6 +27,7 @@ final class AppLifecycleCoordinator {
     @ObservationIgnored private let registerDevice: any RegisterDeviceUseCase
     @ObservationIgnored private let syncScheduler: any SyncScheduling
     @ObservationIgnored private let widgetMenu: any WidgetMenuService
+    @ObservationIgnored private let intentIndexing: any IntentIndexing
     @ObservationIgnored private let lockService: any BiometricLockService
     @ObservationIgnored private let errorCenter: KodaErrorCenter
     @ObservationIgnored private let loggerService: any LoggerService
@@ -44,6 +45,7 @@ final class AppLifecycleCoordinator {
         registerDevice: any RegisterDeviceUseCase,
         syncScheduler: any SyncScheduling,
         widgetMenu: any WidgetMenuService,
+        intentIndexing: any IntentIndexing,
         lockService: any BiometricLockService,
         errorCenter: KodaErrorCenter,
         loggerService: any LoggerService,
@@ -57,10 +59,12 @@ final class AppLifecycleCoordinator {
         self.registerDevice = registerDevice
         self.syncScheduler = syncScheduler
         self.widgetMenu = widgetMenu
+        self.intentIndexing = intentIndexing
         self.lockService = lockService
         self.errorCenter = errorCenter
         self.loggerService = loggerService
         self.registerForRemoteNotifications = registerForRemoteNotifications
+        IntentNavigator.shared.router = router
     }
 
     deinit {
@@ -132,7 +136,24 @@ final class AppLifecycleCoordinator {
             router.popToRoot(in: tab)
         }
         sessionState = .signedOut
-        Task { [widgetMenu] in await widgetMenu.stopAndClear() }
+        Task { [widgetMenu, intentIndexing] in
+            await widgetMenu.stopAndClear()
+            await intentIndexing.stopAndClear()
+        }
+    }
+
+    // MARK: - Deep links
+
+    /// `koda://today`, `koda://shopping` and `koda://shopping/add` (widgets and the Control Center control).
+    func open(url: URL) {
+        guard case .signedIn = sessionState, url.scheme == "koda" else { return }
+        switch url.host() {
+        case "today": router.selectedTab = .today
+        case "planning": router.selectedTab = .planning
+        case "shopping" where url.path() == "/add": router.request(.addToShopping)
+        case "shopping": router.selectedTab = .shopping
+        default: break
+        }
     }
 
     // MARK: - Notifications
@@ -168,6 +189,7 @@ final class AppLifecycleCoordinator {
     private func startSignedInServices(trigger: SyncTrigger) async {
         await syncScheduler.start()
         await widgetMenu.start()
+        await intentIndexing.start()
         await syncScheduler.requestSync(trigger)
         registerForRemoteNotifications()
     }
