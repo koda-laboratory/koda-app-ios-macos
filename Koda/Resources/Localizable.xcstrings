@@ -3297,6 +3297,74 @@
         }
       }
     },
+    "profile.assistant": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "AI assistants"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Asistentes de IA"
+          }
+        }
+      }
+    },
+    "profile.assistant.footer": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Add this address as a custom connector (MCP) in Claude, ChatGPT, Cursor or any assistant that supports MCP, and sign in with your Koda account. It can read and change your planning, recipes and shopping list; meal plans it proposes arrive as drafts to review here."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Añade esta dirección como conector personalizado (MCP) en Claude, ChatGPT, Cursor o cualquier asistente compatible con MCP, y entra con tu cuenta de Koda. Podrá ver y cambiar el planning, las recetas y la compra; los planning que proponga llegan como borradores para revisar aquí."
+          }
+        }
+      }
+    },
+    "profile.assistant.share": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Share address"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Compartir dirección"
+          }
+        }
+      }
+    },
+    "profile.assistant.url": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "MCP server address"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Dirección del servidor MCP"
+          }
+        }
+      }
+    },
     "profile.household": {
       "extractionState": "manual",
       "localizations": {

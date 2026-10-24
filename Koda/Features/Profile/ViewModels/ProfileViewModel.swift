@@ -55,13 +55,17 @@ final class ProfileViewModel: FormViewModel {
     var form = HouseholdSettingsFormState()
     var toast: Toast?
 
+    /// Address of Koda's MCP server, for connecting an AI assistant (Claude, ChatGPT, Cursor…).
+    let assistantServerURL: URL?
+
     @ObservationIgnored private let useCases: UseCases
     @ObservationIgnored private var observations: [Task<Void, Never>]?
 
     // MARK: - Lifecycle
 
-    init(useCases: UseCases) {
+    init(useCases: UseCases, assistantServerURL: URL? = nil) {
         self.useCases = useCases
+        self.assistantServerURL = assistantServerURL
     }
 
     deinit {

@@ -18,7 +18,8 @@ extension Assembly {
                 updateLockPolicy: container.required(UpdateLockPolicyUseCase.self),
                 requestSync: container.required(RequestSyncUseCase.self),
                 logout: container.required(LogoutUseCase.self)
-            )
+            ),
+            assistantServerURL: SupabaseEnvironment.projectURL?.appending(path: "functions/v1/mcp")
         )
     }
 

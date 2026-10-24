@@ -97,6 +97,10 @@ struct ProfileView: View {
                 Text("profile.lock.footer")
             }
 
+            if let url = viewModel.assistantServerURL {
+                ProfileAssistantSection(url: url)
+            }
+
             Section {
                 LabeledContent("profile.sync.status") {
                     Text(syncStatusKey)
@@ -189,6 +193,33 @@ struct ProfileView: View {
         }
         if status.isSyncing { return "sync.syncing" }
         return status.pendingChanges > 0 ? "sync.pending \(status.pendingChanges)" : "sync.synced"
+    }
+}
+
+/// "Asistentes de IA": the MCP server address to add Koda as a connector in any MCP-compatible assistant.
+private struct ProfileAssistantSection: View {
+    let url: URL
+
+    var body: some View {
+        Section {
+            VStack(alignment: .leading, spacing: KodaSpacing.xs) {
+                Text("profile.assistant.url")
+                    .font(KodaTypography.footnote)
+                    .foregroundStyle(KodaColor.textSecondary)
+                Text(verbatim: url.absoluteString)
+                    .font(KodaTypography.footnote.monospaced())
+                    .textSelection(.enabled)
+                    .accessibilityIdentifier("profile-assistant-url")
+            }
+            .padding(.vertical, KodaSpacing.xxs)
+            ShareLink(item: url) {
+                Label("profile.assistant.share", systemImage: "square.and.arrow.up")
+            }
+        } header: {
+            Text("profile.assistant")
+        } footer: {
+            Text("profile.assistant.footer")
+        }
     }
 }
 
