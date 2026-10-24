@@ -3,7 +3,14 @@ import SwiftUI
 /// The signed-in app: Hoy · Planning · Compra · Recetas as a Liquid Glass tab bar on iPhone and a sidebar on the
 /// Mac, with the discreet offline indicator and the "+" quick actions on every section.
 struct MainTabView: View {
+    /// A tab bar item: a section, or the iPhone "+" that only opens the quick actions.
+    private enum TabItem: Hashable {
+        case section(AppTab)
+        case quickActions
+    }
+
     @State private var viewModel: ShellViewModel
+    @State private var showsQuickActions = false
     @Environment(AppRouter.self) private var router
     private let container: DependencyContainer
 
@@ -13,22 +20,30 @@ struct MainTabView: View {
     }
 
     var body: some View {
-        @Bindable var router = router
-        TabView(selection: $router.selectedTab) {
-            Tab(AppTab.today.titleKey, systemImage: "house", value: AppTab.today) {
+        TabView(selection: selection) {
+            Tab(AppTab.today.titleKey, systemImage: "house", value: TabItem.section(.today)) {
                 section(.today) { TodayView(viewModel: Assembly.makeTodayViewModel(container: container)) }
             }
-            Tab(AppTab.planning.titleKey, systemImage: AppTab.planning.systemImage, value: AppTab.planning) {
+            Tab(AppTab.planning.titleKey, systemImage: AppTab.planning.systemImage, value: TabItem.section(.planning)) {
                 section(.planning) { PlanningView(viewModel: Assembly.makePlanningViewModel(container: container)) }
             }
-            Tab(AppTab.shopping.titleKey, systemImage: "bag", value: AppTab.shopping) {
+            Tab(AppTab.shopping.titleKey, systemImage: "bag", value: TabItem.section(.shopping)) {
                 section(.shopping) { ShoppingView(viewModel: Assembly.makeShoppingViewModel(container: container)) }
             }
-            Tab(AppTab.recipes.titleKey, systemImage: AppTab.recipes.systemImage, value: AppTab.recipes) {
+            Tab(AppTab.recipes.titleKey, systemImage: AppTab.recipes.systemImage, value: TabItem.section(.recipes)) {
                 section(.recipes) { RecipesView(viewModel: Assembly.makeRecipesViewModel(container: container)) }
+            }
+            if PlatformIdiom.current == .phone {
+                // The `.search` role is what places an item apart at the trailing end of the iPhone tab bar;
+                // here it hosts the "+" instead of search, and selecting it never leaves the current section.
+                Tab("quick-actions.title", systemImage: "plus", value: TabItem.quickActions, role: .search) {
+                    Color.clear
+                }
             }
         }
         .tabViewStyle(.sidebarAdaptable)
+        .quickActionsDialog(isPresented: $showsQuickActions) { router.request($0) }
+        .sensoryFeedback(.impact(weight: .light), trigger: showsQuickActions) { _, isShown in isShown }
         .tabViewSidebarHeader {
             SidebarBrandHeader()
         }
@@ -36,6 +51,19 @@ struct MainTabView: View {
             SidebarAccountFooter(household: viewModel.household, status: viewModel.syncStatus)
         }
         .task { await viewModel.send(.appeared) }
+    }
+
+    /// Section tabs drive the router; the "+" opens the quick actions and keeps the current section selected.
+    private var selection: Binding<TabItem> {
+        Binding(
+            get: { .section(router.selectedTab) },
+            set: { item in
+                switch item {
+                case .section(let tab): router.selectedTab = tab
+                case .quickActions: showsQuickActions = true
+                }
+            }
+        )
     }
 
     private func section<Content: View>(_ tab: AppTab, @ViewBuilder content: @escaping () -> Content) -> some View {
