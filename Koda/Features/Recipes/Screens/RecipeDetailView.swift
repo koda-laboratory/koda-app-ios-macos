@@ -106,7 +106,7 @@ struct RecipeDetailView: View {
     }
 }
 
-/// "Al planning · A la compra · La comimos".
+/// "Al planning · A la compra".
 private struct RecipeActions: View {
     let viewModel: RecipeDetailViewModel
 
@@ -130,15 +130,6 @@ private struct RecipeActions: View {
                 Task { await viewModel.send(.addToShopping) }
             }
             .accessibilityIdentifier("recipe-add-to-shopping")
-            action(
-                "recipe.action.eaten",
-                systemImage: "checkmark.circle",
-                fill: KodaColor.surface,
-                foreground: KodaColor.brandText
-            ) {
-                Task { await viewModel.send(.logConsumption) }
-            }
-            .accessibilityIdentifier("recipe-log")
         }
     }
 
@@ -157,12 +148,6 @@ private struct RecipeActions: View {
             .foregroundStyle(foreground)
             .frame(maxWidth: .infinity, minHeight: 74)
             .background(fill, in: RoundedRectangle(cornerRadius: KodaRadius.medium, style: .continuous))
-            .overlay {
-                if fill == KodaColor.surface {
-                    RoundedRectangle(cornerRadius: KodaRadius.medium, style: .continuous)
-                        .strokeBorder(KodaColor.brand.opacity(0.25))
-                }
-            }
             .contentShape(RoundedRectangle(cornerRadius: KodaRadius.medium))
         }
         .buttonStyle(.plain)

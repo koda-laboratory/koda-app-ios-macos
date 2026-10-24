@@ -33,13 +33,12 @@ enum RecipeDetailIntent: Sendable {
     case notesFocusChanged(Bool)
     case toggleFavorite
     case addToShopping
-    case logConsumption
     case planMeal
     case edit
     case dismissSheet
 }
 
-/// Recipe detail: stats, "Al planning", "A la compra", "La comimos", ingredients and sub-recipes, notes that save
+/// Recipe detail: stats, "Al planning", "A la compra", ingredients and sub-recipes, notes that save
 /// themselves, and steps.
 @MainActor
 @Observable
@@ -51,7 +50,6 @@ final class RecipeDetailViewModel: MVIViewModel {
         let setFavorite: any SetRecipeFavoriteUseCase
         let updateNotes: any UpdateRecipeNotesUseCase
         let addRecipeToShoppingList: any AddRecipeToShoppingListUseCase
-        let logConsumption: any LogConsumptionUseCase
     }
 
     // MARK: - Properties
@@ -118,8 +116,6 @@ final class RecipeDetailViewModel: MVIViewModel {
             await toggleFavorite()
         case .addToShopping:
             await addToShopping()
-        case .logConsumption:
-            await logConsumption()
         case .planMeal:
             let slot = detail?.recipe.mealTypes.first ?? .dinner
             presentedSheet = .planMeal(.new(day: today, slot: slot, recipeID: recipeID))
@@ -214,24 +210,6 @@ final class RecipeDetailViewModel: MVIViewModel {
                 mealPlanEntryID: nil
             )
             toast = Toast(messageKey: "recipe.toast.added-to-shopping")
-        } catch {
-            toast = .error(error)
-        }
-    }
-
-    private func logConsumption() async {
-        do {
-            try await useCases.logConsumption.execute(
-                NewConsumption(
-                    recipeID: recipeID,
-                    day: today,
-                    slot: nil,
-                    servings: detail?.recipe.servings,
-                    mealPlanEntryID: nil,
-                    source: .manual
-                )
-            )
-            toast = Toast(messageKey: "recipe.toast.logged")
         } catch {
             toast = .error(error)
         }

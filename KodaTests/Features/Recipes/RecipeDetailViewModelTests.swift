@@ -50,8 +50,7 @@ struct RecipeDetailViewModelTests {
                 observeStats: ObserveRecipeStatsUseCaseImpl(repository: environment.recipes),
                 setFavorite: SetRecipeFavoriteUseCaseImpl(repository: environment.recipes),
                 updateNotes: notes,
-                addRecipeToShoppingList: environment.addRecipeToShopping,
-                logConsumption: LogConsumptionUseCaseImpl(repository: environment.planning)
+                addRecipeToShoppingList: environment.addRecipeToShopping
             ),
             sleep: { _ in await sleeper.sleep() },
             clock: { TestClock.now }
@@ -125,7 +124,7 @@ struct RecipeDetailViewModelTests {
         #expect(viewModel.notes == "Lo mío")
     }
 
-    @Test("La comimos logs a manual consumption; A la compra adds the recipe entry")
+    @Test("A la compra adds the recipe entry; Al planning opens the plan sheet")
     func actions() async throws {
         let environment = try await FeatureEnvironment.make()
         let rice = try await environment.product("Arroz")
@@ -134,10 +133,6 @@ struct RecipeDetailViewModelTests {
         let viewModel = makeViewModel(environment, recipeID: recipe.id, notes: notes, sleeper: ManualSleeper())
         await viewModel.send(.appeared)
         #expect(await eventually { viewModel.state == .loaded })
-
-        await viewModel.send(.logConsumption)
-        #expect(try await TestDatabase.string("SELECT source FROM consumptions", in: environment.database) == "manual")
-        #expect(await eventually { viewModel.stats.timesEaten == 1 })
 
         await viewModel.send(.addToShopping)
         #expect(try await TestDatabase.count("shopping_entries", in: environment.database) == 1)

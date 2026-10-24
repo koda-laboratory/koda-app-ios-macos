@@ -82,8 +82,7 @@ extension Assembly {
                 observeStats: container.required(ObserveRecipeStatsUseCase.self),
                 setFavorite: container.required(SetRecipeFavoriteUseCase.self),
                 updateNotes: container.required(UpdateRecipeNotesUseCase.self),
-                addRecipeToShoppingList: container.required(AddRecipeToShoppingListUseCase.self),
-                logConsumption: container.required(LogConsumptionUseCase.self)
+                addRecipeToShoppingList: container.required(AddRecipeToShoppingListUseCase.self)
             )
         )
     }
