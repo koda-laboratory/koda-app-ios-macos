@@ -23,6 +23,7 @@ struct KodaRootView: View {
         .environment(coordinator)
         .environment(coordinator.router)
         .tint(KodaColor.brandText)
+        .kodaAppearance()
     }
 }
 
@@ -55,6 +56,7 @@ struct SplashView: View {
             .environment(coordinator)
             .environment(coordinator.router)
             .tint(KodaColor.brandText)
+            .kodaAppearance()
         }
     }
 #endif

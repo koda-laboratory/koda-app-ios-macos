@@ -10,6 +10,7 @@ struct ProfileView: View {
     @State private var viewModel: ProfileViewModel
     let presentation: Presentation
     @State private var confirmsLogout = false
+    @AppStorage(AppAppearance.storageKey) private var appearance = AppAppearance.system
     @Environment(\.dismiss) private var dismiss
     @Environment(\.locale) private var locale
     @Environment(AppLifecycleCoordinator.self) private var coordinator: AppLifecycleCoordinator?
@@ -54,6 +55,18 @@ struct ProfileView: View {
                 Text("profile.meal-times")
             } footer: {
                 Text("profile.meal-times.footer")
+            }
+
+            Section {
+                Picker("profile.appearance", selection: $appearance) {
+                    ForEach(AppAppearance.allCases, id: \.self) { option in
+                        Text(option.titleKey).tag(option)
+                    }
+                }
+                .pickerStyle(.segmented)
+                .accessibilityIdentifier("profile-appearance")
+            } header: {
+                Text("profile.appearance")
             }
 
             Section {
