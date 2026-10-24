@@ -235,6 +235,7 @@ private struct ProfileHeaderSection: View {
                     .foregroundStyle(KodaColor.cream)
                     .frame(width: 56, height: 56)
                     .background(KodaColor.brand, in: Circle())
+                    .accessibilityHidden(true)
                 VStack(alignment: .leading, spacing: 2) {
                     Text(verbatim: household?.displayName ?? "")
                         .font(KodaTypography.headline)
@@ -244,6 +245,7 @@ private struct ProfileHeaderSection: View {
                 }
             }
             .padding(.vertical, KodaSpacing.xxs)
+            .accessibilityElement(children: .combine)
             ForEach(household?.household.members ?? []) { member in
                 HStack {
                     Text(verbatim: [member.avatarEmoji, member.displayName].compactMap { $0 }.joined(separator: " "))
@@ -252,6 +254,7 @@ private struct ProfileHeaderSection: View {
                         .font(KodaTypography.footnote)
                         .foregroundStyle(KodaColor.textSecondary)
                 }
+                .accessibilityElement(children: .combine)
             }
         } header: {
             Text("profile.household")
