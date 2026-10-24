@@ -39,9 +39,10 @@ struct KodaUShape: Shape {
 // MARK: - Arcs
 
 /// Signature motif: three nested "U" shapes hanging from the top — onyx outside, dark walnut in the middle and
-/// rosy taupe inside. Decorative (login, empty states, detail headers).
+/// rosy taupe inside. Decorative (login, empty states, detail headers). The default outer band is the adaptive
+/// primary text colour: onyx in light mode, cream in dark mode, where onyx would vanish into the background.
 struct KodaArcs: View {
-    var colors: [Color] = [KodaColor.onyx, KodaColor.walnut, KodaColor.taupe]
+    var colors: [Color] = [KodaColor.textPrimary, KodaColor.walnut, KodaColor.taupe]
     /// Height / width of the outer U. The reference artwork is slightly taller than wide.
     var aspectRatio: CGFloat = 132.0 / 112.0
 

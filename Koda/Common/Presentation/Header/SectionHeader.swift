@@ -16,10 +16,13 @@ struct SectionHeader: View {
                 .accessibilityAddTraits(.isHeader)
             Spacer()
             if let actionKey, let action {
-                Button(actionKey, action: action)
-                    .font(KodaTypography.subheadline)
-                    .foregroundStyle(KodaColor.brandText)
-                    .buttonStyle(.plain)
+                Button(action: action) {
+                    Text(actionKey)
+                        .font(KodaTypography.subheadline)
+                        .foregroundStyle(KodaColor.brandText)
+                        .kodaHitTarget()
+                }
+                .buttonStyle(.plain)
             }
         }
     }
@@ -38,10 +41,13 @@ struct ListLabel: View {
                 .accessibilityAddTraits(.isHeader)
             Spacer()
             if let actionKey, let action {
-                Button(actionKey, action: action)
-                    .font(KodaTypography.subheadline.weight(.bold))
-                    .foregroundStyle(KodaColor.brandText)
-                    .buttonStyle(.plain)
+                Button(action: action) {
+                    Text(actionKey)
+                        .font(KodaTypography.subheadline.weight(.bold))
+                        .foregroundStyle(KodaColor.brandText)
+                        .kodaHitTarget()
+                }
+                .buttonStyle(.plain)
             }
         }
         .padding(.horizontal, KodaSpacing.xxs)
@@ -55,9 +61,15 @@ struct ScreenHeader<Trailing: View>: View {
     let subtitle: String
     let title: String
     @ViewBuilder let trailing: () -> Trailing
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
 
     var body: some View {
-        HStack(alignment: .bottom) {
+        // At accessibility sizes the large title takes the whole width and the trailing controls go below it.
+        let layout =
+            dynamicTypeSize.isAccessibilitySize
+            ? AnyLayout(VStackLayout(alignment: .leading, spacing: KodaSpacing.s))
+            : AnyLayout(HStackLayout(alignment: .bottom))
+        layout {
             VStack(alignment: .leading, spacing: 2) {
                 Text(verbatim: subtitle)
                     .font(KodaTypography.subheadline)
@@ -67,7 +79,9 @@ struct ScreenHeader<Trailing: View>: View {
                     .foregroundStyle(KodaColor.textPrimary)
                     .accessibilityAddTraits(.isHeader)
             }
-            Spacer(minLength: KodaSpacing.s)
+            if !dynamicTypeSize.isAccessibilitySize {
+                Spacer(minLength: KodaSpacing.s)
+            }
             trailing()
         }
     }

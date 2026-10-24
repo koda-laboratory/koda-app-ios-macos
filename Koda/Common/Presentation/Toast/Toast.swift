@@ -35,6 +35,11 @@ private struct ToastModifier: ViewModifier {
                         .padding(.horizontal, KodaSpacing.m)
                         .transition(reduceMotion ? .opacity : .move(edge: .top).combined(with: .opacity))
                         .task(id: toast.id) {
+                            // VoiceOver does not move focus to the overlay, so the message is read out instead.
+                            AccessibilityNotification.Announcement(
+                                String(localized: String.LocalizationValue(toast.messageKey))
+                            )
+                            .post()
                             try? await Task.sleep(for: .seconds(2.5))
                             self.toast = nil
                         }
@@ -60,6 +65,8 @@ private struct ToastView: View {
         .padding(.horizontal, KodaSpacing.m)
         .padding(.vertical, KodaSpacing.s)
         .background(KodaColor.onyx, in: Capsule())
+        // Onyx on the onyx dark background needs an edge.
+        .overlay { Capsule().strokeBorder(KodaColor.separator) }
         .shadow(color: KodaColor.onyx.opacity(0.2), radius: 12, y: 6)
         .accessibilityElement(children: .combine)
         .accessibilityAddTraits(.isStaticText)

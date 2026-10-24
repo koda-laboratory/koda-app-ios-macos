@@ -8,7 +8,8 @@ struct LoginArcsHeader: View {
             let height = proxy.size.height
             let band = width / 2 / 3.15
             ZStack(alignment: .top) {
-                KodaArcs(aspectRatio: 470.0 / 330.0)
+                // Fixed onyx outer band: the breakfast label is taupe on it in both modes.
+                KodaArcs(colors: [KodaColor.onyx, KodaColor.walnut, KodaColor.taupe], aspectRatio: 470.0 / 330.0)
                 label("login.arcs.breakfast", color: KodaColor.taupe, centerX: width / 2, centerY: height - band * 0.55)
                 label("login.arcs.lunch", color: KodaColor.cream, centerX: width / 2, centerY: height - band * 1.55)
                 label("login.arcs.dinner", color: KodaColor.walnut, centerX: width / 2, centerY: height - band * 2.75)

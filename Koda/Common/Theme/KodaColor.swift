@@ -36,7 +36,8 @@ enum KodaColor {
     static let surfaceElevated = Color("KodaSurfaceElevated")
     static let textPrimary = Color("KodaTextPrimary")
     static let textSecondary = Color("KodaTextSecondary")
-    /// Eyebrows and section labels ("COMIDA", "EN EL CONGELADOR").
+    /// Eyebrows and section labels ("COMIDA", "EN EL CONGELADOR"): `#7D5E55` / `#9C8680`, at least 4.5:1 on the
+    /// background and cards.
     static let textTertiary = Color("KodaTextTertiary")
     /// Chip and icon-tile fills (`#F1E2DE` / walnut deep).
     static let chip = Color("KodaChip")
@@ -53,7 +54,7 @@ enum KodaColor {
     static let brandText = Color("KodaBrandText")
     static let accent = Color("KodaAccent")
     static let separator = Color("KodaSeparator")
-    /// `#B4533A`, desaturated so it does not break the palette.
+    /// `#B4533A`, desaturated so it does not break the palette; `#D0684D` in dark mode so error text keeps 4.5:1.
     static let error = Color("KodaError")
     /// `#6E8B5E`, desaturated so it does not break the palette.
     static let success = Color("KodaSuccess")

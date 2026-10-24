@@ -43,7 +43,7 @@ struct MainTabView: View {
         }
         .tabViewStyle(.sidebarAdaptable)
         .quickActionsDialog(isPresented: $showsQuickActions) { router.request($0) }
-        .sensoryFeedback(.impact(weight: .light), trigger: showsQuickActions) { _, isShown in isShown }
+        .platformHaptic(.impact(weight: .light), trigger: showsQuickActions) { _, isShown in isShown }
         .tabViewSidebarHeader {
             SidebarBrandHeader()
         }
@@ -72,7 +72,7 @@ struct MainTabView: View {
                 .safeAreaInset(edge: .top, spacing: 0) {
                     OfflineBanner(status: viewModel.syncStatus)
                         .padding(.vertical, viewModel.syncStatus.isOnline ? 0 : KodaSpacing.xs)
-                        .animation(.easeInOut, value: viewModel.syncStatus.isOnline)
+                        .kodaAnimation(.easeInOut, value: viewModel.syncStatus.isOnline)
                 }
                 .quickActions { router.request($0) }
         }

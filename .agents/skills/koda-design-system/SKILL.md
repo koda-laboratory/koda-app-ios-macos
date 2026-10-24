@@ -18,7 +18,7 @@ Inspired by Airbnb and Revolut on top of native Liquid Glass: content first (lar
 | Walnut light (derived) | `#7A3A22` | pressed / hover |
 | Taupe soft (derived) | taupe at 16–24 % | chip fills, separators |
 | Walnut deep (derived) | `#2A140C` | elevated surface in dark mode |
-| Error | `#B4533A` | desaturated error |
+| Error | `#B4533A` (`#D0684D` dark) | desaturated error; lighter in dark mode for text contrast |
 | Success | `#6E8B5E` | desaturated success |
 
 No other hues. Signature gradient: onyx → walnut, vertical (`KodaGradient.signature`), for the Today hero and login.
@@ -50,8 +50,9 @@ Keep it decorative (`accessibilityHidden(true)`) unless it conveys progress; the
 ## Rules
 
 - **Liquid Glass** only for navigation and controls: tab bar / sidebar, toolbars, the "+" button, sheets, `PrimaryButton`. Never on content cards.
-- **Motion**: zoom transition from card to detail, `sensoryFeedback` when ticking an item (iPhone), `symbolEffect` on checks; honor Reduce Motion.
-- **Mac**: slightly higher density, hover states, keyboard shortcuts, resizable windows (`app-resizability`), sidebar + detail columns.
+- **Motion**: zoom transition from card to detail, `symbolEffect` on checks; animate state changes with `kodaAnimation(_:value:)` and the `KodaMotion` tokens (`Common/Theme/KodaMotion.swift`), which turn off with Reduce Motion. Use `KodaMotion.animation(_:reduceMotion:)` inside `withAnimation`.
+- **Haptics**: `platformHaptic(_:trigger:)` (`Core/Platform/PlatformHaptics.swift`) on meaningful actions — check, add, delete, favourite. It plays on iPhone only; never call `sensoryFeedback` directly.
+- **Mac**: slightly higher density, hover states (`kodaHoverHighlight(cornerRadius:)` on interactive cards), keyboard shortcuts, resizable windows (`app-resizability`), sidebar + detail columns.
 - **Accessibility**: Dynamic Type (no fixed font sizes), VoiceOver labels, Reduce Motion, Reduce Transparency (opaque fallback for glass), sufficient contrast of taupe text (use it on walnut/onyx, not on cream for body text).
 - **Dark mode** is first-class: verify every screen in both appearances.
 - Before implementing a main screen, a high-fidelity mockup of Today, Planning, Shopping, and Recipes on iPhone and Mac is validated (PLAN section 10).

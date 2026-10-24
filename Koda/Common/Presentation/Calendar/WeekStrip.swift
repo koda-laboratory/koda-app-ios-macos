@@ -23,6 +23,8 @@ struct WeekStrip: View {
                 WeekStripDayButton(day: day, isSelected: day.day == selected) { onSelect(day.day) }
             }
         }
+        // Seven columns cannot grow with the largest text sizes; VoiceOver reads the full date of each day.
+        .dynamicTypeSize(...DynamicTypeSize.xxxLarge)
         .accessibilityElement(children: .contain)
     }
 }
@@ -40,7 +42,7 @@ private struct WeekStripDayButton: View {
                     .foregroundStyle(isSelected ? KodaColor.taupeLight : KodaColor.textSecondary)
                 Text(verbatim: KodaFormat.dayNumber(day.day))
                     .font(KodaTypography.headline.weight(.heavy))
-                    .foregroundStyle(isSelected ? Color.white : KodaColor.textPrimary)
+                    .foregroundStyle(isSelected ? KodaColor.cream : KodaColor.textPrimary)
                 Circle()
                     .fill(day.fill == 2 ? KodaColor.brand : KodaColor.taupe)
                     .frame(width: KodaSize.dot, height: KodaSize.dot)
