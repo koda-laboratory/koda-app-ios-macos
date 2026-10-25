@@ -9,7 +9,8 @@ protocol RecipeImageRepository: Sendable {
     func localFileURL(path: String) -> URL?
     /// Storage paths waiting to be uploaded, the oldest first; emits on every change.
     func observePendingUploads() -> AsyncStream<[PendingImageUpload]>
-    /// Uploads one pending image and removes it from the queue (a lost local file is dropped from the queue).
+    /// Uploads one pending image and removes it from the queue (a lost local file is dropped from the queue). A path
+    /// that is no longer queued is skipped.
     func upload(path: String) async throws(KodaError)
     func recordUploadFailure(path: String, error: KodaError) async
     /// Sign-out: every image file on disk.

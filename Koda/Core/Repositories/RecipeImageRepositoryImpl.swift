@@ -46,6 +46,15 @@ final class RecipeImageRepositoryImpl: RecipeImageRepository, Sendable {
     }
 
     func upload(path: String) async throws(KodaError) {
+        // Idempotent: the queue observation can briefly hand back a path that was just uploaded.
+        let isPending = try await database.read { db in
+            try Bool.fetchOne(
+                db,
+                sql: "SELECT EXISTS(SELECT 1 FROM pending_image_uploads WHERE storage_path = ?)",
+                arguments: [path]
+            ) ?? false
+        }
+        guard isPending else { return }
         if let data = fileDataSource.data(at: path) {
             try await remoteDataSource.upload(data, path: path, contentType: Self.contentType(of: path))
         }
