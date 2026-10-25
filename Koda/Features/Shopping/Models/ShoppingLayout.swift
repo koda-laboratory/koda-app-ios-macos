@@ -72,7 +72,8 @@ struct ShoppingGroup: Sendable, Equatable, Identifiable {
 struct ShoppingLayout: Sendable, Equatable {
     /// "En varias recetas": products more than one entry needs, ticked once for all of them.
     let sharedRows: [ShoppingRow]
-    /// Recipe entries still being bought (without their shared products), expandable item by item.
+    /// Recipe entries still being bought (without their shared products), expandable item by item. An entry whose
+    /// products are all shared has no items here but keeps its card.
     let recipeEntries: [ShoppingEntry]
     let pendingGroups: [ShoppingGroup]
     /// "En el congelador": loose frozen products and frozen products of recipes.
@@ -143,9 +144,11 @@ struct ShoppingLayout: Sendable, Equatable {
                     have.append(Self.row(entry, quantity: quantity))
                     continue
                 }
+                // The card stays even when every product moved to "En varias recetas": it is the only place to
+                // remove the recipe (for example one added twice by mistake).
                 var visible = entry
                 visible.items = entry.items.filter { !sharedProductIDs.contains($0.productID) }
-                if !visible.items.isEmpty { recipes.append(visible) }
+                recipes.append(visible)
                 continue
             }
             var row = Self.row(entry, quantity: quantity)

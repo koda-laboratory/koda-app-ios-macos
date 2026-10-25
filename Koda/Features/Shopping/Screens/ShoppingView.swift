@@ -175,6 +175,7 @@ struct ShoppingView: View {
     }
 
     private func recipeSubtitle(_ entry: ShoppingEntry) -> String {
+        if entry.items.isEmpty { return String(localized: "shopping.recipe.all-shared") }
         let left = String(localized: "shopping.recipe.left \(entry.pendingItemCount)")
         let frozen =
             entry.frozenItemCount > 0 ? String(localized: "shopping.recipe.frozen \(entry.frozenItemCount)") : nil

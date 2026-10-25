@@ -5899,6 +5899,23 @@
         }
       }
     },
+    "shopping.recipe.all-shared": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "All in “In several recipes”"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Todo en «En varias recetas»"
+          }
+        }
+      }
+    },
     "shopping.recipe.collapsed": {
       "extractionState": "manual",
       "localizations": {

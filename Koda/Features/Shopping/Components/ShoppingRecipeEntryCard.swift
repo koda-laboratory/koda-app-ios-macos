@@ -16,9 +16,13 @@ struct ShoppingRecipeEntryCard: View {
     /// `nil` when the card cannot be removed as a whole.
     var onRemove: (() -> Void)?
 
+    private var canExpand: Bool { !rows.isEmpty }
+
     var body: some View {
         VStack(spacing: 0) {
-            Button(action: onToggleExpanded) {
+            Button {
+                if canExpand { onToggleExpanded() }
+            } label: {
                 HStack(spacing: KodaSpacing.s) {
                     Image(systemName: systemImage)
                         .foregroundStyle(KodaColor.taupe)
@@ -35,18 +39,34 @@ struct ShoppingRecipeEntryCard: View {
                             .foregroundStyle(KodaColor.textSecondary)
                     }
                     Spacer(minLength: 0)
-                    Image(systemName: "chevron.down")
-                        .font(.body.weight(.bold))
-                        .foregroundStyle(KodaColor.brandText)
-                        .rotationEffect(.degrees(isExpanded ? 180 : 0))
-                        .accessibilityHidden(true)
+                    if canExpand {
+                        Image(systemName: "chevron.down")
+                            .font(.body.weight(.bold))
+                            .foregroundStyle(KodaColor.brandText)
+                            .rotationEffect(.degrees(isExpanded ? 180 : 0))
+                            .accessibilityHidden(true)
+                    } else if let onRemove {
+                        // Nothing to expand (all its products are in "En varias recetas"): remove it right here.
+                        Button(action: onRemove) {
+                            Image(systemName: "trash")
+                                .font(.body.weight(.semibold))
+                                .foregroundStyle(KodaColor.error)
+                                .frame(width: KodaSize.hitTarget, height: KodaSize.hitTarget)
+                                .contentShape(Rectangle())
+                        }
+                        .buttonStyle(.plain)
+                        .accessibilityLabel(Text("shopping.remove"))
+                    }
                 }
                 .padding(.horizontal, KodaSpacing.m)
                 .padding(.vertical, KodaSpacing.s + 2)
                 .contentShape(Rectangle())
             }
             .buttonStyle(.plain)
-            .accessibilityValue(Text(isExpanded ? "shopping.recipe.expanded" : "shopping.recipe.collapsed"))
+            .accessibilityValue(
+                canExpand
+                    ? Text(isExpanded ? "shopping.recipe.expanded" : "shopping.recipe.collapsed") : Text(verbatim: "")
+            )
             .contextMenu {
                 if let onRemove {
                     Button("shopping.remove", systemImage: "trash", role: .destructive, action: onRemove)
@@ -58,7 +78,7 @@ struct ShoppingRecipeEntryCard: View {
                 }
             }
 
-            if isExpanded {
+            if isExpanded, canExpand {
                 VStack(spacing: 0) {
                     ForEach(rows) { row in
                         Divider().overlay(KodaColor.chip)

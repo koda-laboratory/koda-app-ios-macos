@@ -159,6 +159,42 @@ struct ShoppingViewModelTests {
         #expect(await eventually { layout(viewModel).frozenRows.first?.recipeTitle == "Arroz a la cubana" })
     }
 
+    @Test("A recipe added twice keeps both cards, all shared, and each one can be removed")
+    func duplicatedRecipe() async throws {
+        let environment = try await FeatureEnvironment.make()
+        let eggs = try await environment.product("Huevos")
+        let rice = try await environment.product("Arroz")
+        let recipe = try await environment.recipe("Arroz a la cubana", products: [eggs, rice])
+        let viewModel = makeViewModel(environment)
+        await viewModel.send(.appeared)
+        #expect(await eventually { viewModel.state == .ready })
+
+        await viewModel.send(.pickSuggestion(.recipe(recipe)))
+        await viewModel.send(.pickSuggestion(.recipe(recipe)))
+        #expect(await eventually { layout(viewModel).sharedRows.count == 2 })
+        let cards = layout(viewModel).recipeEntries
+        #expect(cards.count == 2)
+        #expect(cards.allSatisfy { $0.items.isEmpty })
+        #expect(layout(viewModel).pendingCount == 2)
+
+        let first = try #require(cards.first)
+        let row = ShoppingRow(
+            source: .entry(first.id),
+            title: first.title,
+            quantityText: "",
+            status: first.status,
+            category: nil,
+            storeNames: [],
+            isText: false,
+            recipeTitle: nil
+        )
+        await viewModel.send(.removeRow(row))
+        #expect(await eventually { layout(viewModel).recipeEntries.count == 1 })
+        // With one entry left nothing is shared: its products are back in its own card.
+        #expect(layout(viewModel).sharedRows.isEmpty)
+        #expect(layout(viewModel).recipeEntries.first?.items.count == 2)
+    }
+
     @Test("A product two recipes need shows once and ticking it updates both recipes")
     func sharedProducts() async throws {
         let environment = try await FeatureEnvironment.make()
