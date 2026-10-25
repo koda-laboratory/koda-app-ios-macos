@@ -82,7 +82,10 @@ struct RecipeTilePalette {
 
 #if DEBUG
     #Preview("Recipe tiles") {
-        LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: KodaSpacing.s) {
+        LazyVGrid(
+            columns: [GridItem(.flexible(), alignment: .top), GridItem(.flexible(), alignment: .top)],
+            spacing: KodaSpacing.s
+        ) {
             ForEach(PresentationPreviewFactory.recipeNames, id: \.self) { name in
                 RecipeTile(recipeID: PresentationPreviewFactory.id(for: name), name: name, detail: "45 min · 6 veces")
             }
@@ -100,7 +103,7 @@ struct RecipeTilePalette {
     }
 
     #Preview("Recipe tiles · Mac", traits: .fixedLayout(width: 900, height: 400)) {
-        LazyVGrid(columns: [GridItem(.adaptive(minimum: 180))], spacing: KodaSpacing.s) {
+        LazyVGrid(columns: [GridItem(.adaptive(minimum: 180), alignment: .top)], spacing: KodaSpacing.s) {
             ForEach(PresentationPreviewFactory.recipeNames, id: \.self) { name in
                 RecipeTile(recipeID: PresentationPreviewFactory.id(for: name), name: name, detail: "45 min")
             }

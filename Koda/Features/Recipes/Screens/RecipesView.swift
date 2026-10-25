@@ -72,7 +72,7 @@ struct RecipesView: View {
                         }
                     }
                     LazyVGrid(
-                        columns: [GridItem(.adaptive(minimum: 150), spacing: KodaSpacing.s)],
+                        columns: [GridItem(.adaptive(minimum: 150), spacing: KodaSpacing.s, alignment: .top)],
                         alignment: .leading,
                         spacing: KodaSpacing.m
                     ) {
