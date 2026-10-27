@@ -53,6 +53,7 @@ struct RecipesView: View {
                                 }
                             }
                         }
+                        .kodaEdgeToEdgeScroll()
                     }
                 }
 
@@ -171,6 +172,7 @@ private struct RecipeFilterChips: View {
             }
             .padding(.vertical, 2)
         }
+        .kodaEdgeToEdgeScroll()
     }
 }
 

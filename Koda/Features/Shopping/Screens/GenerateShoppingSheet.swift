@@ -36,6 +36,7 @@ struct GenerateShoppingSheet: View {
                             }
                         }
                     }
+                    .kodaEdgeToEdgeScroll()
 
                     GenerateCandidatesList(viewModel: viewModel)
 
