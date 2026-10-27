@@ -1,6 +1,6 @@
 import Foundation
 
-/// Uploads the photos taken on this device to Storage whenever there is a connection: observes the local queue and
+/// Uploads the recipe and product photos taken on this device to their Storage bucket whenever there is a connection: observes the local queue and
 /// the network, uploads one image at a time and backs off after a failure. The rows that reference the images sync
 /// through the outbox independently.
 protocol RecipeImageUploadService: Sendable {
@@ -87,7 +87,10 @@ actor RecipeImageUploadServiceImpl: RecipeImageUploadService {
                 pending.removeAll { $0.path == next.path }
             } catch {
                 guard error.type != .apiRequestCancelled else { return }
-                loggerService.warning("A recipe image upload failed.", attributes: ["error.type": error.type.rawValue])
+                loggerService.warning(
+                    "An image upload failed.",
+                    attributes: ["error.type": error.type.rawValue, "bucket": next.bucket.rawValue]
+                )
                 await repository.recordUploadFailure(path: next.path, error: error)
                 // Wait before the next try (30 s, 60 s, … up to 10 min).
                 let delay = min(30 * (next.attempts + 1), 600)

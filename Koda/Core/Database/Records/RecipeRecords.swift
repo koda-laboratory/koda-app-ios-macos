@@ -82,3 +82,20 @@ struct RecipePhotoRecord: SyncedRecord, Equatable {
     var clientUpdatedAt: String?
     var serverSeq: Int64?
 }
+
+struct RecipeLinkRecord: SyncedRecord, Equatable {
+    static let syncedTable = SyncedTable.recipeLinks
+
+    var id: String
+    var householdId: String
+    var recipeId: String
+    /// An `http(s)` URL of at most 2048 characters (checked by the server too).
+    var url: String
+    var position: Int
+    var createdAt: String?
+    var updatedAt: String?
+    var updatedBy: String?
+    var deletedAt: String?
+    var clientUpdatedAt: String?
+    var serverSeq: Int64?
+}

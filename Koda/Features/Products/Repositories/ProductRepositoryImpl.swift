@@ -27,6 +27,11 @@ final class ProductRepositoryImpl: ProductRepository, Sendable {
         }
     }
 
+    func observeProductDetail(id: UUID) -> AsyncStream<ProductDetail?> {
+        let productID = id.lowercasedString
+        return database.observe { db in try Self.fetchDetail(productID: productID, in: db) }
+    }
+
     func observeStores() -> AsyncStream<[Store]> {
         database.observe { db in
             try StoreRecord.live()
@@ -96,6 +101,47 @@ final class ProductRepositoryImpl: ProductRepository, Sendable {
 
     // MARK: - Private Methods
 
+    private static func fetchDetail(productID: String, in db: Database) throws -> ProductDetail? {
+        guard let record = try ProductRecord.live().filter(key: productID).fetchOne(db) else { return nil }
+        let links = try ProductStoreRecord.live().filter(Column("product_id") == productID).fetchAll(db)
+        guard let product = Product(record: record, links: links) else { return nil }
+
+        let stores = try StoreRecord.live()
+            .filter(keys: links.map(\.storeId))
+            .order(Column("name").collating(.localizedCaseInsensitiveCompare))
+            .fetchAll(db)
+            .compactMap(Store.init(record:))
+        let photos = try ProductPhotoRecord.live()
+            .filter(Column("product_id") == productID)
+            .order(Column("position"), Column("created_at"))
+            .fetchAll(db)
+            .compactMap(ProductPhoto.init(record:))
+        // One row per recipe: the first ingredient line that uses the product.
+        let usageRows = try Row.fetchAll(
+            db,
+            sql: """
+                SELECT r.id, r.name, r.time_minutes, i.quantity, i.unit
+                FROM recipe_ingredients i
+                JOIN recipes r ON r.id = i.recipe_id AND r.deleted_at IS NULL
+                WHERE i.product_id = ? AND i.deleted_at IS NULL
+                ORDER BY r.name COLLATE NOCASE, i.position
+                """,
+            arguments: [productID]
+        )
+        var seen = Set<UUID>()
+        let usages = usageRows.compactMap { row -> ProductRecipeUsage? in
+            guard let recipeID = UUID(uuidString: row["id"]), seen.insert(recipeID).inserted else { return nil }
+            return ProductRecipeUsage(
+                recipeID: recipeID,
+                recipeName: row["name"],
+                quantity: row["quantity"],
+                unit: row["unit"],
+                timeMinutes: row["time_minutes"]
+            )
+        }
+        return ProductDetail(product: product, stores: stores, photos: photos, usages: usages)
+    }
+
     private static func replaceStores(
         _ storeIDs: Set<UUID>,
         of productID: String,
@@ -138,7 +184,25 @@ extension Product {
             servingsPerWeek: record.servingsPerWeek,
             notes: record.notes,
             emoji: record.emoji,
+            imagePath: record.imagePath,
+            imageSource: record.imageSource.flatMap(RecipeImageSource.init(rawValue:)),
             storeIDs: Set(links.compactMap { UUID(uuidString: $0.storeId) })
+        )
+    }
+}
+
+extension ProductPhoto {
+    init?(record: ProductPhotoRecord) {
+        guard let id = UUID(uuidString: record.id), let productID = UUID(uuidString: record.productId) else {
+            return nil
+        }
+        self.init(
+            id: id,
+            productID: productID,
+            storagePath: record.storagePath,
+            width: record.width,
+            height: record.height,
+            position: record.position
         )
     }
 }

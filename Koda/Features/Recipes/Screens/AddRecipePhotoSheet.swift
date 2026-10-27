@@ -2,10 +2,11 @@ import PhotosUI
 import SwiftUI
 
 /// "Añadir foto" (approved mockup `AddPhoto`): take a photo (iPhone) or choose one from Photos or, on the Mac, from a
-/// file; "Usar como portada" starts on when the recipe has no cover yet. The photo is stored on the device and
-/// uploads by itself when there is a connection.
+/// file; "Usar como portada" starts on when the recipe or product has no cover yet. The photo is stored on the device
+/// and uploads by itself when there is a connection.
 struct AddRecipePhotoSheet: View {
-    let recipeName: String
+    /// The recipe or product name, under the title.
+    let title: String
     let onPick: (Data, Bool) -> Void
     let onCancel: () -> Void
 
@@ -16,8 +17,8 @@ struct AddRecipePhotoSheet: View {
     @State private var isImportingFile = false
     @State private var contentHeight: CGFloat = 420
 
-    init(recipeName: String, asCover: Bool, onPick: @escaping (Data, Bool) -> Void, onCancel: @escaping () -> Void) {
-        self.recipeName = recipeName
+    init(title: String, asCover: Bool, onPick: @escaping (Data, Bool) -> Void, onCancel: @escaping () -> Void) {
+        self.title = title
         self.onPick = onPick
         self.onCancel = onCancel
         _asCover = State(initialValue: asCover)
@@ -31,7 +32,7 @@ struct AddRecipePhotoSheet: View {
                     Text("recipe.photos.sheet.title")
                         .font(KodaTypography.title)
                         .foregroundStyle(KodaColor.textPrimary)
-                    Text(verbatim: recipeName)
+                    Text(verbatim: title)
                         .font(KodaTypography.callout)
                         .foregroundStyle(KodaColor.textSecondary)
                 }
@@ -187,18 +188,18 @@ private struct SourceRowLabel: View {
 
 #if DEBUG
     #Preview("Add photo · no cover") {
-        AddRecipePhotoSheet(recipeName: "Lentejas estofadas", asCover: true, onPick: { _, _ in }, onCancel: {})
+        AddRecipePhotoSheet(title: "Lentejas estofadas", asCover: true, onPick: { _, _ in }, onCancel: {})
             .kodaPreview()
     }
 
     #Preview("Add photo · with cover · dark") {
-        AddRecipePhotoSheet(recipeName: "Tortilla de patata", asCover: false, onPick: { _, _ in }, onCancel: {})
+        AddRecipePhotoSheet(title: "Tortilla de patata", asCover: false, onPick: { _, _ in }, onCancel: {})
             .kodaPreview()
             .preferredColorScheme(.dark)
     }
 
     #Preview("Add photo · Mac", traits: .fixedLayout(width: 460, height: 420)) {
-        AddRecipePhotoSheet(recipeName: "Lentejas estofadas", asCover: true, onPick: { _, _ in }, onCancel: {})
+        AddRecipePhotoSheet(title: "Lentejas estofadas", asCover: true, onPick: { _, _ in }, onCancel: {})
             .kodaPreview()
     }
 #endif

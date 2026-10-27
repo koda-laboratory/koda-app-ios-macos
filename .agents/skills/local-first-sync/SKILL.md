@@ -14,15 +14,15 @@ Read the `local-first` and `architecture` rules first.
 - `AppDatabase` wraps a GRDB `DatabasePool` (WAL) stored in the App Group container `group.com.kodalabs.app`, shared by the app, App Intents, and widgets on iPhone and Mac.
 - iOS file protection `completeUntilFirstUserAuthentication` so intents and background sync can write while the iPhone is locked.
 - Schema changes are additive GRDB migrations registered in order; never edit a shipped migration.
-- Local tables mirror the synced server tables (`stores`, `products`, `product_stores`, `recipes`, `recipe_ingredients`, `recipe_components`, `recipe_photos`, `meal_plan_drafts`, `meal_plan_entries`, `consumptions`, `shopping_entries`, `shopping_entry_items`, …) plus:
+- Local tables mirror the synced server tables (`stores`, `products`, `product_stores`, `product_photos`, `recipes`, `recipe_ingredients`, `recipe_components`, `recipe_photos`, `recipe_links`, `meal_plan_drafts`, `meal_plan_entries`, `consumptions`, `shopping_entries`, `shopping_entry_items`, …) plus:
 
 ```text
 outbox(id, table, row_id, op, fields_json, client_ts, attempts, last_error)
 sync_state(cursor, last_sync_at)
-pending_image_uploads(storage_path, created_at, attempts, last_error)
+pending_image_uploads(storage_path, bucket, created_at, attempts, last_error)
 ```
 
-Recipe images are not synced through the outbox: `recipe_photos` rows and `recipes.image_path` sync normally, while the bytes go to the private Storage bucket `recipe-images` (`<household>/<recipe>/<uuid>.jpg`). `RecipePhotoRepository` writes the file to the App Group (`RecipeImages/`), the rows and a `pending_image_uploads` entry in one step; `RecipeImageUploadService` uploads the queue when online; `RecipeImageRepository.imageData` reads from disk or downloads once and keeps the file.
+Recipe and product images are not synced through the outbox (same pipeline, keyed by `ImageBucket`: `recipe-images` / `product-images`, on disk under `RecipeImages/` / `ProductImages/`): `recipe_photos` rows and `recipes.image_path` sync normally, while the bytes go to the private Storage bucket `recipe-images` (`<household>/<recipe>/<uuid>.jpg`). `RecipePhotoRepository` writes the file to the App Group (`RecipeImages/`), the rows and a `pending_image_uploads` entry in one step; `RecipeImageUploadService` uploads the queue when online; `RecipeImageRepository.imageData` reads from disk or downloads once and keeps the file.
 
 - Synced rows carry `id` (client UUID), `household_id`, `created_at`, `updated_at`, `updated_by`, `deleted_at` (tombstone). `server_seq` is server-only and drives the pull cursor.
 

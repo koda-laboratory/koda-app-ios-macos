@@ -137,10 +137,11 @@ struct RecipePhotoTests {
         #expect(remote.uploads == environment.imageFiles.paths)
         // Downloads come from disk first, and from Storage (then cached) for images of other devices.
         let path = try #require(remote.uploads.first)
-        #expect(await repository.imageData(path: path) != nil)
+        #expect(await repository.imageData(path: path, bucket: .recipes) != nil)
         await service.stopAndClear()
         #expect(environment.imageFiles.paths.isEmpty)
-        #expect(await repository.imageData(path: path) != nil)
+        #expect(await repository.imageData(path: path, bucket: .recipes) != nil)
+        #expect(remote.uploadedBuckets == [.recipes])
         #expect(environment.imageFiles.paths == [path])
     }
 

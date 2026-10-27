@@ -26,12 +26,15 @@ enum RecipeDetailSheet: Sendable, Equatable, Identifiable {
     case edit
     /// "Añadir foto", with "Usar como portada" preselected when the recipe has no cover yet.
     case addPhoto(asCover: Bool)
+    /// "Añadir vídeo".
+    case addLink
 
     var id: String {
         switch self {
         case .planMeal(let request): "plan-\(request.id)"
         case .edit: "edit"
         case .addPhoto: "add-photo"
+        case .addLink: "add-link"
         }
     }
 }
@@ -59,10 +62,12 @@ enum RecipeDetailIntent: Sendable {
     case deletePhoto(RecipeGalleryItem)
     case openPhoto(RecipeGalleryItem)
     case dismissViewer
+    case addLinkTapped
+    case removeLink(RecipeLink)
 }
 
-/// Recipe detail: stats, "Al planning", "A la compra", ingredients and sub-recipes, notes that save
-/// themselves, and steps.
+/// Recipe detail: stats, "Al planning", "A la compra", photos, video links, ingredients and sub-recipes, notes that
+/// save themselves, and steps.
 @MainActor
 @Observable
 final class RecipeDetailViewModel: MVIViewModel {
@@ -76,6 +81,8 @@ final class RecipeDetailViewModel: MVIViewModel {
         let addPhoto: any AddRecipePhotoUseCase
         let setCover: any SetRecipeCoverUseCase
         let deletePhoto: any DeleteRecipePhotoUseCase
+        let observeLinks: any ObserveRecipeLinksUseCase
+        let removeLink: any RemoveRecipeLinkUseCase
     }
 
     // MARK: - Properties
@@ -85,6 +92,7 @@ final class RecipeDetailViewModel: MVIViewModel {
     private(set) var notesState = RecipeNotesState.saved
     private(set) var detail: RecipeDetail?
     private(set) var stats = RecipeStats.never
+    private(set) var links: [RecipeLink] = []
     private(set) var notes = ""
     private(set) var photoSaveState = RecipePhotoSaveState.idle
     var presentedSheet: RecipeDetailSheet?
@@ -165,6 +173,10 @@ final class RecipeDetailViewModel: MVIViewModel {
             presentedViewer = RecipePhotoViewerRequest(initialPath: item.path)
         case .dismissViewer:
             presentedViewer = nil
+        case .addLinkTapped:
+            presentedSheet = .addLink
+        case .removeLink(let link):
+            await removeLink(link)
         }
     }
 
@@ -174,6 +186,7 @@ final class RecipeDetailViewModel: MVIViewModel {
         guard observations == nil else { return }
         let details = useCases.observeDetail.execute(recipeID: recipeID)
         let stats = useCases.observeStats.execute(recipeID: recipeID)
+        let links = useCases.observeLinks.execute(recipeID: recipeID)
         observations = [
             Task { [weak self] in
                 for await detail in details {
@@ -182,6 +195,9 @@ final class RecipeDetailViewModel: MVIViewModel {
             },
             Task { [weak self] in
                 for await value in stats { self?.stats = value }
+            },
+            Task { [weak self] in
+                for await value in links { self?.links = value }
             },
         ]
     }
@@ -271,6 +287,15 @@ final class RecipeDetailViewModel: MVIViewModel {
             feedback = FeedbackEvent(.removed)
             // The viewer closes when its last image goes.
             if detail?.gallery.count ?? 0 <= 1 { presentedViewer = nil }
+        } catch {
+            toast = .error(error)
+        }
+    }
+
+    private func removeLink(_ link: RecipeLink) async {
+        do {
+            try await useCases.removeLink.execute(linkID: link.id)
+            feedback = FeedbackEvent(.removed)
         } catch {
             toast = .error(error)
         }

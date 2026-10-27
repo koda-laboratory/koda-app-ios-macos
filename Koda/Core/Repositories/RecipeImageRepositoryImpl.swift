@@ -22,15 +22,17 @@ final class RecipeImageRepositoryImpl: RecipeImageRepository, Sendable {
 
     // MARK: - Reading
 
-    func imageData(path: String) async -> Data? {
-        if let data = fileDataSource.data(at: path) { return data }
-        guard let data = try? await remoteDataSource.download(path: path), !data.isEmpty else { return nil }
-        try? fileDataSource.write(data, at: path)
+    func imageData(path: String, bucket: ImageBucket) async -> Data? {
+        if let data = fileDataSource.data(at: path, bucket: bucket) { return data }
+        guard let data = try? await remoteDataSource.download(path: path, bucket: bucket), !data.isEmpty else {
+            return nil
+        }
+        try? fileDataSource.write(data, at: path, bucket: bucket)
         return data
     }
 
-    func localFileURL(path: String) -> URL? {
-        fileDataSource.fileURL(at: path)
+    func localFileURL(path: String, bucket: ImageBucket) -> URL? {
+        fileDataSource.fileURL(at: path, bucket: bucket)
     }
 
     // MARK: - Uploads
@@ -39,24 +41,36 @@ final class RecipeImageRepositoryImpl: RecipeImageRepository, Sendable {
         database.observe { db in
             try Row.fetchAll(
                 db,
-                sql: "SELECT storage_path, attempts FROM pending_image_uploads ORDER BY created_at, storage_path"
+                sql: """
+                    SELECT storage_path, bucket, attempts FROM pending_image_uploads
+                    ORDER BY created_at, storage_path
+                    """
             )
-            .map { PendingImageUpload(path: $0["storage_path"], attempts: $0["attempts"]) }
+            .compactMap { row in
+                // A bucket unknown to this version stays queued for a newer one.
+                guard let bucket = ImageBucket(rawValue: row["bucket"]) else { return nil }
+                return PendingImageUpload(path: row["storage_path"], bucket: bucket, attempts: row["attempts"])
+            }
         }
     }
 
     func upload(path: String) async throws(KodaError) {
         // Idempotent: the queue observation can briefly hand back a path that was just uploaded.
-        let isPending = try await database.read { db in
-            try Bool.fetchOne(
+        let bucketName = try await database.read { db in
+            try String.fetchOne(
                 db,
-                sql: "SELECT EXISTS(SELECT 1 FROM pending_image_uploads WHERE storage_path = ?)",
+                sql: "SELECT bucket FROM pending_image_uploads WHERE storage_path = ?",
                 arguments: [path]
-            ) ?? false
+            )
         }
-        guard isPending else { return }
-        if let data = fileDataSource.data(at: path) {
-            try await remoteDataSource.upload(data, path: path, contentType: Self.contentType(of: path))
+        guard let bucketName, let bucket = ImageBucket(rawValue: bucketName) else { return }
+        if let data = fileDataSource.data(at: path, bucket: bucket) {
+            try await remoteDataSource.upload(
+                data,
+                path: path,
+                bucket: bucket,
+                contentType: Self.contentType(of: path)
+            )
         }
         try await database.write { db in
             try db.execute(sql: "DELETE FROM pending_image_uploads WHERE storage_path = ?", arguments: [path])

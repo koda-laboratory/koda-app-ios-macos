@@ -1,10 +1,11 @@
 import SwiftUI
 
-/// A recipe image from Storage that fills its frame (cropped), with `placeholder` until it is available. A missing
+/// A recipe or product image from Storage (`bucket`) that fills its frame (cropped), with `placeholder` until it is available. A missing
 /// image (not uploaded yet by the partner's device, or offline) is retried a few times while the view is visible.
 struct RecipeImageView<Placeholder: View>: View {
     let path: String?
     var maxPixelSize = 800
+    var bucket = ImageBucket.recipes
     @ViewBuilder let placeholder: () -> Placeholder
 
     @Environment(\.recipeImageLoader) private var loader
@@ -24,7 +25,7 @@ struct RecipeImageView<Placeholder: View>: View {
             }
             .clipped()
             .animation(.easeOut(duration: 0.2), value: loaded?.path)
-            .task(id: path) { await load() }
+            .task(id: TaskID(path: path, bucket: bucket)) { await load() }
     }
 
     private func load() async {
@@ -33,7 +34,7 @@ struct RecipeImageView<Placeholder: View>: View {
             return
         }
         for attempt in 0..<4 {
-            if let image = await loader.image(path, maxPixelSize) {
+            if let image = await loader.image(path, bucket, maxPixelSize) {
                 loaded = LoadedImage(path: path, image: image)
                 return
             }
@@ -44,6 +45,11 @@ struct RecipeImageView<Placeholder: View>: View {
             }
         }
     }
+}
+
+private struct TaskID: Equatable {
+    let path: String?
+    let bucket: ImageBucket
 }
 
 private struct LoadedImage {

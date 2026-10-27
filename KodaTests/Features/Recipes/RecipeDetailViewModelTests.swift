@@ -53,7 +53,9 @@ struct RecipeDetailViewModelTests {
                 addRecipeToShoppingList: environment.addRecipeToShopping,
                 addPhoto: environment.addPhoto,
                 setCover: environment.setCover,
-                deletePhoto: environment.deletePhoto
+                deletePhoto: environment.deletePhoto,
+                observeLinks: ObserveRecipeLinksUseCaseImpl(repository: environment.links),
+                removeLink: RemoveRecipeLinkUseCaseImpl(repository: environment.links)
             ),
             sleep: { _ in await sleeper.sleep() },
             clock: { TestClock.now }

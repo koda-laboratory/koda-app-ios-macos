@@ -28,6 +28,8 @@ enum KodaTypography {
     static let caption = Font.caption
     static let caption2 = Font.caption2
     static let emoji = Font.system(size: 56)
+    /// The product emoji on a detail hero without a cover (decorative, so it does not scale).
+    static let heroEmoji = Font.system(size: 170)
 }
 
 // MARK: - Previews

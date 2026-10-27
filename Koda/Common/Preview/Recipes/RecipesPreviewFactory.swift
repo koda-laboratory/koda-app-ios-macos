@@ -65,4 +65,26 @@ enum RecipesPreviewFactory {
         RecipeGalleryItem(path: "preview/tortilla/2.jpg", photoID: PreviewDatabase.uuid(302), isCover: false),
         RecipeGalleryItem(path: "preview/tortilla/3.jpg", photoID: PreviewDatabase.uuid(303), isCover: false),
     ]
+
+    static let links = [
+        "https://www.tiktok.com/@cocinaconana/video/7301234567890",
+        "https://www.instagram.com/recetasdelaabuela/reel/C1a2B3c4D5e/",
+        "https://youtube.com/shorts/aBcD1234xyz",
+        "https://www.directoalpaladar.com/recetas-de-arroces/arroz-a-la-cubana",
+    ]
+    .enumerated()
+    .compactMap { position, string in
+        URL(string: string).map {
+            RecipeLink(id: PreviewDatabase.uuid(1400 + position), recipeID: recipe.id, url: $0, position: position)
+        }
+    }
+
+    static func makeAddRecipeLinkViewModel(
+        text: String = "",
+        container: DependencyContainer = PreviewContainer.populated
+    ) -> AddRecipeLinkViewModel {
+        let viewModel = Assembly.makeAddRecipeLinkViewModel(recipeID: recipe.id, container: container)
+        viewModel.text = text
+        return viewModel
+    }
 }

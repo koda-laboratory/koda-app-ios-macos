@@ -1,19 +1,18 @@
 import Foundation
 
-/// Supabase Storage objects of the private `recipe-images` bucket (`/storage/v1/object/...`). Paths are
-/// `<household>/<recipe>/<uuid>.<ext>`; the bucket's policies only allow the folders of the user's households.
+/// Supabase Storage objects of the private image buckets (`/storage/v1/object/...`, see `ImageBucket`). Paths are
+/// `<household>/<owner>/<uuid>.<ext>`; the buckets' policies only allow the folders of the user's households.
 enum StorageAPI {
-    static let recipeImagesBucket = "recipe-images"
-
     /// `POST /object/<bucket>/<path>` with `x-upsert` (a retried upload of the same file overwrites it).
     static func upload(
+        bucket: ImageBucket,
         path: String,
         data: Data,
         contentType: String,
         headerProvider: any HTTPHeaderProvider
     ) -> StorageRequest {
         StorageRequest(
-            path: "storage/v1/object/\(recipeImagesBucket)/\(path)",
+            path: "storage/v1/object/\(bucket.rawValue)/\(path)",
             method: .post,
             body: data,
             extraHeaders: [SupabaseHeaders.contentType: contentType, "x-upsert": "true"],
@@ -23,9 +22,13 @@ enum StorageAPI {
     }
 
     /// `GET /object/authenticated/<bucket>/<path>`: the bytes, with the user's JWT.
-    static func download(path: String, headerProvider: any HTTPHeaderProvider) -> StorageRequest {
+    static func download(
+        bucket: ImageBucket,
+        path: String,
+        headerProvider: any HTTPHeaderProvider
+    ) -> StorageRequest {
         StorageRequest(
-            path: "storage/v1/object/authenticated/\(recipeImagesBucket)/\(path)",
+            path: "storage/v1/object/authenticated/\(bucket.rawValue)/\(path)",
             method: .get,
             body: nil,
             extraHeaders: [SupabaseHeaders.accept: "*/*"],

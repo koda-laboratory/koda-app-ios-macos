@@ -3,29 +3,29 @@ import Foundation
 import Synchronization
 import SwiftUI
 
-/// Loads recipe images for display: decoded, downsampled `CGImage`s kept in a small memory cache in front of the
+/// Loads recipe and product images for display: decoded, downsampled `CGImage`s kept in a small memory cache in front of the
 /// on-disk cache. Installed once at the root (`.environment(\.recipeImageLoader, …)`) so tiles, the hero and the
 /// gallery share it without a ViewModel per image.
 struct RecipeImageLoader: Sendable {
-    let image: @Sendable (_ path: String, _ maxPixelSize: Int) async -> CGImage?
+    let image: @Sendable (_ path: String, _ bucket: ImageBucket, _ maxPixelSize: Int) async -> CGImage?
     /// The file of an image already on disk, for sharing.
-    let fileURL: @Sendable (_ path: String) -> URL?
+    let fileURL: @Sendable (_ path: String, _ bucket: ImageBucket) -> URL?
 
-    static let unavailable = RecipeImageLoader(image: { _, _ in nil }, fileURL: { _ in nil })
+    static let unavailable = RecipeImageLoader(image: { _, _, _ in nil }, fileURL: { _, _ in nil })
 
     static func live(useCase: any LoadRecipeImageUseCase) -> RecipeImageLoader {
         let cache = RecipeImageMemoryCache()
         return RecipeImageLoader(
-            image: { path, maxPixelSize in
-                let key = "\(maxPixelSize)|\(path)"
+            image: { path, bucket, maxPixelSize in
+                let key = "\(bucket.rawValue)|\(maxPixelSize)|\(path)"
                 if let cached = cache.image(for: key) { return cached }
-                guard let data = await useCase.execute(path: path),
+                guard let data = await useCase.execute(path: path, bucket: bucket),
                     let image = ImageDecoding.thumbnail(from: data, maxPixelSize: maxPixelSize)
                 else { return nil }
                 cache.insert(image, for: key)
                 return image
             },
-            fileURL: { useCase.localFileURL(path: $0) }
+            fileURL: { useCase.localFileURL(path: $0, bucket: $1) }
         )
     }
 }

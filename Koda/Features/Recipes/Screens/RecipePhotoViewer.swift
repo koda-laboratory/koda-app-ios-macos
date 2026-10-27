@@ -1,10 +1,12 @@
 import SwiftUI
 
 /// Full-screen viewer (approved mockup `Viewer`): swipe between the images, "2 de 3", share, "Usar como portada"
-/// and delete. A sheet window on the Mac.
+/// and delete. A sheet window on the Mac. Shared by recipes and products (`bucket`).
 struct RecipePhotoViewer: View {
-    let recipeName: String
+    /// The recipe or product name, for the share preview.
+    let title: String
     let gallery: [RecipeGalleryItem]
+    let bucket: ImageBucket
     let onSetCover: (RecipeGalleryItem) -> Void
     let onDelete: (RecipeGalleryItem) -> Void
     let onClose: () -> Void
@@ -14,15 +16,17 @@ struct RecipePhotoViewer: View {
     @Environment(\.recipeImageLoader) private var loader
 
     init(
-        recipeName: String,
+        title: String,
         gallery: [RecipeGalleryItem],
+        bucket: ImageBucket = .recipes,
         initialPath: String,
         onSetCover: @escaping (RecipeGalleryItem) -> Void,
         onDelete: @escaping (RecipeGalleryItem) -> Void,
         onClose: @escaping () -> Void
     ) {
-        self.recipeName = recipeName
+        self.title = title
         self.gallery = gallery
+        self.bucket = bucket
         self.onSetCover = onSetCover
         self.onDelete = onDelete
         self.onClose = onClose
@@ -35,7 +39,7 @@ struct RecipePhotoViewer: View {
             ScrollView(.horizontal) {
                 LazyHStack(spacing: 0) {
                     ForEach(gallery) { item in
-                        ViewerPage(path: item.path)
+                        ViewerPage(path: item.path, bucket: bucket)
                             .containerRelativeFrame([.horizontal, .vertical])
                             .id(item.path)
                     }
@@ -86,8 +90,8 @@ struct RecipePhotoViewer: View {
                     .foregroundStyle(KodaColor.taupe)
             }
             Spacer()
-            if let current, let url = loader.fileURL(current.path) {
-                ShareLink(item: url, preview: SharePreview(Text(verbatim: recipeName))) {
+            if let current, let url = loader.fileURL(current.path, bucket) {
+                ShareLink(item: url, preview: SharePreview(Text(verbatim: title))) {
                     CircleIcon(systemImage: "square.and.arrow.up")
                 }
                 .buttonStyle(.plain)
@@ -143,6 +147,7 @@ struct RecipePhotoViewer: View {
 /// One image, fitted to the page.
 private struct ViewerPage: View {
     let path: String
+    let bucket: ImageBucket
     @Environment(\.recipeImageLoader) private var loader
     @State private var image: CGImage?
 
@@ -157,7 +162,7 @@ private struct ViewerPage: View {
             }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .task(id: path) { image = await loader.image(path, 2000) }
+        .task(id: path) { image = await loader.image(path, bucket, 2000) }
     }
 }
 
@@ -208,7 +213,7 @@ private struct CircleIcon: View {
 #if DEBUG
     #Preview("Photo viewer") {
         RecipePhotoViewer(
-            recipeName: "Tortilla de patata",
+            title: "Tortilla de patata",
             gallery: RecipesPreviewFactory.gallery,
             initialPath: RecipesPreviewFactory.gallery[1].path,
             onSetCover: { _ in },
@@ -220,7 +225,7 @@ private struct CircleIcon: View {
 
     #Preview("Photo viewer · cover") {
         RecipePhotoViewer(
-            recipeName: "Tortilla de patata",
+            title: "Tortilla de patata",
             gallery: RecipesPreviewFactory.gallery,
             initialPath: RecipesPreviewFactory.gallery[0].path,
             onSetCover: { _ in },
@@ -233,7 +238,7 @@ private struct CircleIcon: View {
 
     #Preview("Photo viewer · Mac", traits: .fixedLayout(width: 900, height: 700)) {
         RecipePhotoViewer(
-            recipeName: "Tortilla de patata",
+            title: "Tortilla de patata",
             gallery: RecipesPreviewFactory.gallery,
             initialPath: RecipesPreviewFactory.gallery[0].path,
             onSetCover: { _ in },

@@ -65,6 +65,10 @@ enum KodaSize {
     static let recipeHeroHeight: CGFloat = 340
     /// Square thumbnails of the "Fotos" strip.
     static let photoThumbnail: CGFloat = 96
+    /// Icon tiles of list rows ("Se usa en", "Vídeos").
+    static let rowTile: CGFloat = 40
+    /// Platform tile of a recipe video link.
+    static let linkTile: CGFloat = 44
     /// Readable column on the Mac.
     static let readableWidth: CGFloat = 760
 }

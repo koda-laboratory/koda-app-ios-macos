@@ -76,6 +76,19 @@ extension View {
         #endif
     }
 
+    /// URL keyboard, no autocapitalization and no autocorrection: links are typed or pasted as they are.
+    func platformURLField() -> some View {
+        #if os(iOS)
+            keyboardType(.URL)
+                .textInputAutocapitalization(.never)
+                .autocorrectionDisabled()
+                .textContentType(.URL)
+        #else
+            autocorrectionDisabled()
+                .textContentType(.URL)
+        #endif
+    }
+
     /// Decimal keyboard on iPhone.
     func platformDecimalField() -> some View {
         #if os(iOS)

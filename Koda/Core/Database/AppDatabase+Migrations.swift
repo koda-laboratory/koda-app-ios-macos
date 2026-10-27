@@ -10,6 +10,7 @@ extension AppDatabase {
         migrator.registerMigration("v1_sync_bookkeeping", migrate: SchemaV1.syncBookkeeping)
         migrator.registerMigration("v2_meals_shopping_status_frozen", migrate: SchemaV2.migrate)
         migrator.registerMigration("v3_recipe_images", migrate: SchemaV3.migrate)
+        migrator.registerMigration("v4_product_images_recipe_links", migrate: SchemaV4.migrate)
         return migrator
     }
 }
@@ -295,5 +296,56 @@ private enum SchemaV3 {
             table.column("attempts", .integer).notNull().defaults(to: 0)
             table.column("last_error", .text)
         }
+    }
+}
+
+/// Product images and recipe video links (backend migration `20261027211551`): the product cover, the
+/// `product_photos` gallery, `recipe_links`, and the Storage bucket of each queued upload.
+private enum SchemaV4 {
+    static func migrate(_ db: Database) throws {
+        try db.alter(table: "products") { table in
+            table.add(column: "image_path", .text)
+            table.add(column: "image_source", .text)
+        }
+
+        try db.create(table: "product_photos") { table in
+            table.primaryKey("id", .text)
+            table.column("household_id", .text).notNull()
+            table.column("product_id", .text).notNull().indexed()
+            table.column("storage_path", .text).notNull()
+            table.column("width", .integer)
+            table.column("height", .integer)
+            table.column("position", .integer).notNull().defaults(to: 0)
+            syncColumns(table)
+        }
+
+        try db.create(table: "recipe_links") { table in
+            table.primaryKey("id", .text)
+            table.column("household_id", .text).notNull()
+            table.column("recipe_id", .text).notNull().indexed()
+            table.column("url", .text).notNull()
+            table.column("position", .integer).notNull().defaults(to: 0)
+            syncColumns(table)
+        }
+
+        // Every image queued before this version belongs to a recipe.
+        try db.alter(table: "pending_image_uploads") { table in
+            table.add(column: "bucket", .text).notNull().defaults(to: "recipe-images")
+        }
+
+        // Earlier versions already pulled rows of these tables and columns and ignored them (forward
+        // compatibility), and the cursor is past them: the next sync pulls everything again from 0. Pulled rows are
+        // upserted by id (never older over newer) and pending local changes are rebased on top, so the local rows
+        // and the outbox stay as they are.
+        try db.execute(sql: "UPDATE sync_state SET cursor = 0 WHERE id = 1")
+    }
+
+    private static func syncColumns(_ table: TableDefinition) {
+        table.column("created_at", .text)
+        table.column("updated_at", .text)
+        table.column("updated_by", .text)
+        table.column("deleted_at", .text)
+        table.column("client_updated_at", .text)
+        table.column("server_seq", .integer)
     }
 }

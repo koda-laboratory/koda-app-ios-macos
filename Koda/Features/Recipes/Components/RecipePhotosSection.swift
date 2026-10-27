@@ -2,9 +2,13 @@ import SwiftUI
 
 /// "Fotos": the add tile and the gallery strip (the cover marked "Portada"), or the "Haz una foto cuando la cocines"
 /// card when there are no images. Images can also be dropped onto the section (Mac, and iPhone drag and drop).
-/// Context menu on each photo: "Usar como portada · Compartir · Eliminar".
+/// Context menu on each photo: "Usar como portada · Compartir · Eliminar". Shared by recipes and products: `bucket`
+/// and the empty-card copy change.
 struct RecipePhotosSection: View {
     let gallery: [RecipeGalleryItem]
+    var bucket = ImageBucket.recipes
+    var emptyTitleKey: LocalizedStringKey = "recipe.photos.empty.title"
+    var emptyMessageKey: LocalizedStringKey = "recipe.photos.empty.message"
     let isSaving: Bool
     let onAdd: () -> Void
     let onOpen: (RecipeGalleryItem) -> Void
@@ -25,7 +29,12 @@ struct RecipePhotosSection: View {
                 }
             }
             if gallery.isEmpty {
-                EmptyPhotosCard(isSaving: isSaving, action: onAdd)
+                EmptyPhotosCard(
+                    titleKey: emptyTitleKey,
+                    messageKey: emptyMessageKey,
+                    isSaving: isSaving,
+                    action: onAdd
+                )
             } else {
                 ScrollView(.horizontal) {
                     HStack(spacing: KodaSpacing.s - 2) {
@@ -33,6 +42,7 @@ struct RecipePhotosSection: View {
                         ForEach(gallery) { item in
                             PhotoThumbnail(
                                 item: item,
+                                bucket: bucket,
                                 onOpen: { onOpen(item) },
                                 onSetCover: { onSetCover(item) },
                                 onDelete: { onDelete(item) }
@@ -42,6 +52,7 @@ struct RecipePhotosSection: View {
                 }
                 .scrollIndicators(.hidden)
                 .scrollClipDisabled()
+                .kodaEdgeToEdgeScroll()
             }
         }
         .overlay {
@@ -98,6 +109,8 @@ private struct AddPhotoTile: View {
 
 /// "Haz una foto cuando la cocines": the gallery's empty state.
 private struct EmptyPhotosCard: View {
+    let titleKey: LocalizedStringKey
+    let messageKey: LocalizedStringKey
     let isSaving: Bool
     let action: () -> Void
 
@@ -115,10 +128,10 @@ private struct EmptyPhotosCard: View {
                 .frame(width: 48, height: 48)
                 .background(KodaColor.chip, in: RoundedRectangle(cornerRadius: KodaRadius.small, style: .continuous))
                 VStack(alignment: .leading, spacing: 2) {
-                    Text("recipe.photos.empty.title")
+                    Text(titleKey)
                         .font(KodaTypography.body.weight(.bold))
                         .foregroundStyle(KodaColor.textPrimary)
-                    Text("recipe.photos.empty.message")
+                    Text(messageKey)
                         .font(KodaTypography.footnote)
                         .foregroundStyle(KodaColor.textSecondary)
                         .fixedSize(horizontal: false, vertical: true)
@@ -143,6 +156,7 @@ private struct EmptyPhotosCard: View {
 /// A square photo with the "Portada" badge on the cover.
 private struct PhotoThumbnail: View {
     let item: RecipeGalleryItem
+    let bucket: ImageBucket
     let onOpen: () -> Void
     let onSetCover: () -> Void
     let onDelete: () -> Void
@@ -151,7 +165,7 @@ private struct PhotoThumbnail: View {
 
     var body: some View {
         Button(action: onOpen) {
-            RecipeImageView(path: item.path, maxPixelSize: 300) { KodaColor.chip }
+            RecipeImageView(path: item.path, maxPixelSize: 300, bucket: bucket) { KodaColor.chip }
                 .frame(width: KodaSize.photoThumbnail, height: KodaSize.photoThumbnail)
                 .clipShape(RoundedRectangle(cornerRadius: KodaRadius.tile, style: .continuous))
                 .overlay(alignment: .bottomLeading) {
@@ -166,7 +180,7 @@ private struct PhotoThumbnail: View {
             if !item.isCover {
                 Button("recipe.photos.use-as-cover", systemImage: "rectangle.inset.filled", action: onSetCover)
             }
-            if let url = loader.fileURL(item.path) {
+            if let url = loader.fileURL(item.path, bucket) {
                 ShareLink(item: url) { Label("recipe.photos.share", systemImage: "square.and.arrow.up") }
             }
             Button("recipe.photos.delete", systemImage: "trash", role: .destructive, action: onDelete)

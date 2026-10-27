@@ -160,7 +160,7 @@ struct AppRouteDestination: View {
         case .products:
             ProductsView(viewModel: Assembly.makeProductsViewModel())
         case .product(let id):
-            ProductEditorView(viewModel: Assembly.makeProductEditorViewModel(productID: id))
+            ProductDetailView(viewModel: Assembly.makeProductDetailViewModel(productID: id))
         case .mealPlanDraft(let id):
             DraftReviewView(viewModel: Assembly.makeDraftReviewViewModel(draftID: id))
         }

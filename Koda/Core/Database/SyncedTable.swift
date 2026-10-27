@@ -4,11 +4,15 @@ enum SyncedTable: String, CaseIterable, Sendable, Codable {
     case stores
     case products
     case productStores = "product_stores"
+    /// The gallery of a product; the image bytes live in Supabase Storage (`product-images`).
+    case productPhotos = "product_photos"
     case recipes
     case recipeIngredients = "recipe_ingredients"
     case recipeComponents = "recipe_components"
     /// The gallery of a recipe; the image bytes live in Supabase Storage (`recipe-images`).
     case recipePhotos = "recipe_photos"
+    /// Links to short videos of a recipe (TikTok, Instagram reels, YouTube shorts).
+    case recipeLinks = "recipe_links"
     case mealPlanDrafts = "meal_plan_drafts"
     case mealPlanEntries = "meal_plan_entries"
     case consumptions
@@ -61,20 +65,20 @@ enum SyncedTable: String, CaseIterable, Sendable, Codable {
         case .products:
             [
                 (.productStores, "product_id"), (.recipeIngredients, "product_id"), (.shoppingEntries, "product_id"),
-                (.shoppingEntryItems, "product_id"),
+                (.shoppingEntryItems, "product_id"), (.productPhotos, "product_id"),
             ]
         case .recipes:
             [
                 (.recipeIngredients, "recipe_id"), (.recipeComponents, "parent_recipe_id"),
                 (.recipeComponents, "child_recipe_id"), (.mealPlanEntries, "recipe_id"), (.consumptions, "recipe_id"),
-                (.recipePhotos, "recipe_id"),
+                (.recipePhotos, "recipe_id"), (.recipeLinks, "recipe_id"),
             ]
         case .mealPlanDrafts:
             [(.mealPlanEntries, "draft_id")]
         case .shoppingEntries:
             [(.shoppingEntryItems, "entry_id")]
-        case .productStores, .recipeIngredients, .recipeComponents, .recipePhotos, .mealPlanEntries, .consumptions,
-            .shoppingEntryItems, .frozenItems:
+        case .productStores, .productPhotos, .recipeIngredients, .recipeComponents, .recipePhotos, .recipeLinks,
+            .mealPlanEntries, .consumptions, .shoppingEntryItems, .frozenItems:
             []
         }
     }

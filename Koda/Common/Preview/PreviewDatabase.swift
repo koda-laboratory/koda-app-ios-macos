@@ -138,6 +138,55 @@ enum PreviewDatabase {
                 """,
             arguments: [id(450), household, id(204), id(208)]
         )
+        try seedProductDetail(db)
+        try seedRecipeLinks(db)
+    }
+
+    /// "Alitas de pollo": emoji, price, notes, both stores, a cover with two more photos and a second recipe.
+    private static func seedProductDetail(_ db: Database) throws {
+        try db.execute(
+            sql: """
+                UPDATE products SET emoji = '🍗', price_per_kg = 6.95, image_path = ?, image_source = 'photo',
+                                    notes = 'Las de Mercadona vienen en bandeja de 1 kg; congelar en raciones de 500 g.'
+                WHERE id = ?
+                """,
+            arguments: ["\(household)/\(id(104))/cover.jpg", id(104)]
+        )
+        try db.execute(sql: "UPDATE products SET emoji = '🥚', price_total = 2.4 WHERE id = ?", arguments: [id(106)])
+        try db.execute(
+            sql: "INSERT INTO product_stores (id, household_id, product_id, store_id) VALUES (?, ?, ?, ?)",
+            arguments: [id(2104), household, id(104), id(302)]
+        )
+        for (position, name) in ["cover", "bandeja", "etiqueta"].enumerated() {
+            try db.execute(
+                sql: """
+                    INSERT INTO product_photos (id, household_id, product_id, storage_path, width, height, position)
+                    VALUES (?, ?, ?, ?, 1600, 1200, ?)
+                    """,
+                arguments: [id(1300 + position), household, id(104), "\(household)/\(id(104))/\(name).jpg", position]
+            )
+        }
+        try db.execute(
+            sql: """
+                INSERT INTO recipe_ingredients (id, household_id, recipe_id, product_id, quantity, unit, position)
+                VALUES (?, ?, ?, ?, 500, 'g', 1)
+                """,
+            arguments: [id(409), household, id(202), id(104)]
+        )
+    }
+
+    private static func seedRecipeLinks(_ db: Database) throws {
+        let links = [
+            "https://www.tiktok.com/@cocinaconana/video/7301234567890",
+            "https://www.instagram.com/recetasdelaabuela/reel/C1a2B3c4D5e/",
+            "https://youtube.com/shorts/aBcD1234xyz",
+        ]
+        for (position, url) in links.enumerated() {
+            try db.execute(
+                sql: "INSERT INTO recipe_links (id, household_id, recipe_id, url, position) VALUES (?, ?, ?, ?, ?)",
+                arguments: [id(1400 + position), household, id(204), url, position]
+            )
+        }
     }
 
     private static func seedPlanning(_ db: Database, today: LocalDay, now: Date) throws {

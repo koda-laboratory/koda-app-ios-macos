@@ -1,9 +1,9 @@
 import Foundation
 
-/// Image objects in Supabase Storage (`recipe-images`), with the user's JWT.
+/// Image objects in the Supabase Storage buckets (`recipe-images`, `product-images`), with the user's JWT.
 protocol RecipeImageRemoteDataSource: Sendable {
-    func upload(_ data: Data, path: String, contentType: String) async throws(KodaError)
-    func download(path: String) async throws(KodaError) -> Data
+    func upload(_ data: Data, path: String, bucket: ImageBucket, contentType: String) async throws(KodaError)
+    func download(path: String, bucket: ImageBucket) async throws(KodaError) -> Data
 }
 
 final class RecipeImageRemoteDataSourceImpl: RecipeImageRemoteDataSource, Sendable {
@@ -15,13 +15,19 @@ final class RecipeImageRemoteDataSourceImpl: RecipeImageRemoteDataSource, Sendab
         self.headerProvider = headerProvider
     }
 
-    func upload(_ data: Data, path: String, contentType: String) async throws(KodaError) {
+    func upload(_ data: Data, path: String, bucket: ImageBucket, contentType: String) async throws(KodaError) {
         try await httpService.execute(
-            StorageAPI.upload(path: path, data: data, contentType: contentType, headerProvider: headerProvider)
+            StorageAPI.upload(
+                bucket: bucket,
+                path: path,
+                data: data,
+                contentType: contentType,
+                headerProvider: headerProvider
+            )
         )
     }
 
-    func download(path: String) async throws(KodaError) -> Data {
-        try await httpService.execute(StorageAPI.download(path: path, headerProvider: headerProvider))
+    func download(path: String, bucket: ImageBucket) async throws(KodaError) -> Data {
+        try await httpService.execute(StorageAPI.download(bucket: bucket, path: path, headerProvider: headerProvider))
     }
 }

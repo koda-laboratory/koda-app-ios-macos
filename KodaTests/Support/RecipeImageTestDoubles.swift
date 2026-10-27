@@ -6,28 +6,51 @@ import UniformTypeIdentifiers
 
 @testable import Koda
 
-/// Image files in memory, by Storage path.
+/// Image files in memory, by bucket and Storage path.
 final class InMemoryRecipeImageFiles: RecipeImageFileDataSource, Sendable {
-    private let files = Mutex<[String: Data]>([:])
-
-    var paths: [String] { files.withLock { Array($0.keys).sorted() } }
-
-    func data(at path: String) -> Data? { files.withLock { $0[path] } }
-
-    func fileURL(at path: String) -> URL? {
-        data(at: path) == nil ? nil : URL(filePath: "/tmp/koda-tests/\(path)")
+    private struct Key: Hashable {
+        let bucket: ImageBucket
+        let path: String
     }
 
-    func write(_ data: Data, at path: String) throws(KodaError) { files.withLock { $0[path] = data } }
+    private let files = Mutex<[Key: Data]>([:])
 
-    func remove(at path: String) { _ = files.withLock { $0.removeValue(forKey: path) } }
+    /// Paths of every bucket.
+    var paths: [String] { files.withLock { $0.keys.map(\.path).sorted() } }
+
+    func paths(in bucket: ImageBucket) -> [String] {
+        files.withLock { $0.keys.filter { $0.bucket == bucket }.map(\.path).sorted() }
+    }
+
+    func data(at path: String, bucket: ImageBucket) -> Data? {
+        files.withLock { $0[Key(bucket: bucket, path: path)] }
+    }
+
+    func fileURL(at path: String, bucket: ImageBucket) -> URL? {
+        data(at: path, bucket: bucket) == nil ? nil : URL(filePath: "/tmp/koda-tests/\(bucket.rawValue)/\(path)")
+    }
+
+    func write(_ data: Data, at path: String, bucket: ImageBucket) throws(KodaError) {
+        files.withLock { $0[Key(bucket: bucket, path: path)] = data }
+    }
+
+    func remove(at path: String, bucket: ImageBucket) {
+        _ = files.withLock { $0.removeValue(forKey: Key(bucket: bucket, path: path)) }
+    }
 
     func removeAll() { files.withLock { $0.removeAll() } }
 }
 
-/// Storage that records uploads and can fail a number of times first.
+/// Storage that records uploads (with their bucket) and can fail a number of times first.
 final class FakeRecipeImageRemote: RecipeImageRemoteDataSource, Sendable {
-    private let state = Mutex<(uploads: [String], failuresLeft: Int, objects: [String: Data])>(([], 0, [:]))
+    private struct State {
+        var uploads: [(path: String, bucket: ImageBucket)] = []
+        var failuresLeft = 0
+        /// By `<bucket>/<path>`.
+        var objects: [String: Data] = [:]
+    }
+
+    private let state = Mutex(State())
 
     init(failures: Int = 0, objects: [String: Data] = [:]) {
         state.withLock {
@@ -36,23 +59,24 @@ final class FakeRecipeImageRemote: RecipeImageRemoteDataSource, Sendable {
         }
     }
 
-    var uploads: [String] { state.withLock { $0.uploads } }
+    var uploads: [String] { state.withLock { $0.uploads.map(\.path) } }
+    var uploadedBuckets: [ImageBucket] { state.withLock { $0.uploads.map(\.bucket) } }
 
-    func upload(_ data: Data, path: String, contentType: String) async throws(KodaError) {
+    func upload(_ data: Data, path: String, bucket: ImageBucket, contentType: String) async throws(KodaError) {
         let shouldFail = state.withLock { state -> Bool in
             if state.failuresLeft > 0 {
                 state.failuresLeft -= 1
                 return true
             }
-            state.uploads.append(path)
-            state.objects[path] = data
+            state.uploads.append((path, bucket))
+            state.objects["\(bucket.rawValue)/\(path)"] = data
             return false
         }
         if shouldFail { throw KodaError(type: .noInternet, reason: "Offline.") }
     }
 
-    func download(path: String) async throws(KodaError) -> Data {
-        guard let data = state.withLock({ $0.objects[path] }) else {
+    func download(path: String, bucket: ImageBucket) async throws(KodaError) -> Data {
+        guard let data = state.withLock({ $0.objects["\(bucket.rawValue)/\(path)"] }) else {
             throw KodaError(type: .notFound, reason: "Object not found.")
         }
         return data

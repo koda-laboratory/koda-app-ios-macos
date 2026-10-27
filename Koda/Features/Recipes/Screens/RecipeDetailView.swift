@@ -75,16 +75,20 @@ struct RecipeDetailView: View {
                 )
             case .addPhoto(let asCover):
                 AddRecipePhotoSheet(
-                    recipeName: viewModel.detail?.recipe.name ?? "",
+                    title: viewModel.detail?.recipe.name ?? "",
                     asCover: asCover,
                     onPick: { data, asCover in Task { await viewModel.send(.addPhoto(data, asCover: asCover)) } },
                     onCancel: { Task { await viewModel.send(.dismissSheet) } }
+                )
+            case .addLink:
+                AddRecipeLinkSheet(
+                    viewModel: Assembly.makeAddRecipeLinkViewModel(recipeID: viewModel.recipeID, container: container)
                 )
             }
         }
         .platformFullScreenCover(item: $viewModel.presentedViewer) { request in
             RecipePhotoViewer(
-                recipeName: viewModel.detail?.recipe.name ?? "",
+                title: viewModel.detail?.recipe.name ?? "",
                 gallery: viewModel.detail?.gallery ?? [],
                 initialPath: request.initialPath,
                 onSetCover: { item in Task { await viewModel.send(.setCover(item)) } },
@@ -121,6 +125,11 @@ struct RecipeDetailView: View {
                         onDrop: { data in
                             Task { await viewModel.send(.addPhoto(data, asCover: detail.recipe.imagePath == nil)) }
                         }
+                    )
+                    RecipeLinksSection(
+                        links: viewModel.links,
+                        onAdd: { Task { await viewModel.send(.addLinkTapped) } },
+                        onRemove: { link in Task { await viewModel.send(.removeLink(link)) } }
                     )
                     RecipeIngredientsSection(detail: detail)
                     RecipeNotesEditor(

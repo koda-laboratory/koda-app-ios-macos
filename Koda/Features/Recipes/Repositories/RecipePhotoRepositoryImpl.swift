@@ -43,7 +43,7 @@ final class RecipePhotoRepositoryImpl: RecipePhotoRepository, Sendable {
                 ) ?? 0
 
             // The file first: if the transaction fails, an orphan file is harmless; a row without its file is not.
-            try fileDataSource.write(image.data, at: path)
+            try fileDataSource.write(image.data, at: path, bucket: .recipes)
             let saved = try writer.save(
                 RecipePhotoRecord(
                     id: photoID,
@@ -57,8 +57,10 @@ final class RecipePhotoRepositoryImpl: RecipePhotoRepository, Sendable {
                 in: db
             )
             try db.execute(
-                sql: "INSERT OR IGNORE INTO pending_image_uploads (storage_path, created_at) VALUES (?, ?)",
-                arguments: [path, writer.timestamp()]
+                sql: """
+                    INSERT OR IGNORE INTO pending_image_uploads (storage_path, bucket, created_at) VALUES (?, ?, ?)
+                    """,
+                arguments: [path, ImageBucket.recipes.rawValue, writer.timestamp()]
             )
             if asCover {
                 recipe.imagePath = path
@@ -111,6 +113,6 @@ final class RecipePhotoRepositoryImpl: RecipePhotoRepository, Sendable {
             }
             return photo.storagePath
         }
-        if let removedPath { fileDataSource.remove(at: removedPath) }
+        if let removedPath { fileDataSource.remove(at: removedPath, bucket: .recipes) }
     }
 }

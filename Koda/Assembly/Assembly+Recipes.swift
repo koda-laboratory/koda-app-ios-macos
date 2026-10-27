@@ -33,6 +33,23 @@ extension Assembly {
                 DeleteRecipePhotoUseCaseImpl(repository: resolver.required(RecipePhotoRepository.self))
             }
 
+            container.register(RecipeLinkRepository.self) { resolver in
+                RecipeLinkRepositoryImpl(
+                    database: resolver.required(AppDatabase.self),
+                    writer: resolver.required(LocalMutationWriter.self)
+                )
+            }
+            .inObjectScope(.container)
+            container.register(ObserveRecipeLinksUseCase.self) { resolver in
+                ObserveRecipeLinksUseCaseImpl(repository: resolver.required(RecipeLinkRepository.self))
+            }
+            container.register(AddRecipeLinkUseCase.self) { resolver in
+                AddRecipeLinkUseCaseImpl(repository: resolver.required(RecipeLinkRepository.self))
+            }
+            container.register(RemoveRecipeLinkUseCase.self) { resolver in
+                RemoveRecipeLinkUseCaseImpl(repository: resolver.required(RecipeLinkRepository.self))
+            }
+
             container.register(RecipeExpansionService.self) { _ in RecipeExpansionServiceImpl() }
                 .inObjectScope(.container)
 
@@ -106,9 +123,18 @@ extension Assembly {
                 addRecipeToShoppingList: container.required(AddRecipeToShoppingListUseCase.self),
                 addPhoto: container.required(AddRecipePhotoUseCase.self),
                 setCover: container.required(SetRecipeCoverUseCase.self),
-                deletePhoto: container.required(DeleteRecipePhotoUseCase.self)
+                deletePhoto: container.required(DeleteRecipePhotoUseCase.self),
+                observeLinks: container.required(ObserveRecipeLinksUseCase.self),
+                removeLink: container.required(RemoveRecipeLinkUseCase.self)
             )
         )
+    }
+
+    static func makeAddRecipeLinkViewModel(
+        recipeID: UUID,
+        container: DependencyContainer = .shared
+    ) -> AddRecipeLinkViewModel {
+        AddRecipeLinkViewModel(recipeID: recipeID, addLink: container.required(AddRecipeLinkUseCase.self))
     }
 
     static func makeRecipeEditorViewModel(
